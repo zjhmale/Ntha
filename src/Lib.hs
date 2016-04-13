@@ -4,6 +4,7 @@ module Lib
 
 import qualified Data.Map as M
 import Ast
+import Type
 
 someMap :: M.Map String String
 someMap = M.fromList [("stack exec", "hello haskell")]
