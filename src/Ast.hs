@@ -2,66 +2,53 @@
 
 module Ast where
 
-type VName = String -- variable name
+import Type
+import qualified Data.Map as M
 
-data Lit =
-    LInt Int
-  | LBool Bool
-  | LString String
+type VName = String -- variable name
+type EField = String
+
+data AstNode = Program [Instruction]
+             | Instruction
+
+data Instruction = Expr
+                 | LetBinding VName (Maybe Type) [Named] [Instruction]
+                 | DestructLetBinding Pattern [Pattern] [Instruction]
+                 | DataDecl VName Type [Type] [TypeConstructor]
+                 | ExceptionDecl VName [Type]
+
+data TypeConstructor = TypeConstructor [VName] (Maybe [Type])
+
+data Named = Named VName (Maybe Type)
+
+data Pattern = WildcardPattern
+             | IdPattern VName
+             | TuplePattern [Pattern]
+             | TyConPattern VName [Pattern]
+
+data Case = Case Pattern [Instruction]
 
 data Expr =
     EVar VName
-  | ELit Lit
-  | EAbs VName Expr
+  | EAccessor Expr EField
+  | ENum Int
+  | EStr String
+  | EChar Char
+  | EBool Bool
+  | EList [Expr]
+  | ETuple [Expr]
+  | ERecord (M.Map EField Expr)
+  | EUnit
+  | ELambda [Named] (Maybe Type) [Instruction]
   | EApp Expr Expr
-  | ELet VName Expr Expr
-  | ELetRec VName Expr Expr
-  | ESucc Expr
-  | EPred Expr
-  | EAdd Expr Expr
-  | ETimes Expr Expr
-  | EIsZero Expr
+  | ETryCatch [Instruction] [Case]
+  | EThrow Expr
   | EIf Expr Expr Expr
-  | EFix Expr
-  | EId Expr
-  | ENot Expr
-  | EAnd Expr Expr
-  | EEq Expr Expr
-  | ECompose Expr Expr
-  | ENil
-  | ECons Expr Expr
-  | EHead Expr
-  | ETail Expr
-  | EIsEmpty Expr
-  | EPair Expr Expr
-
-instance Show Lit where
-    show (LInt value) = show value
-    show (LBool value) = show value
-    show (LString value) = show value
+  | PatternMatching Expr [Case]
 
 instance Show Expr where
-    show (EVar name) = name
-    show (ELit lit) = show lit
-    show (EAbs name e) = "λ" ++ name ++ " → " ++ show e
-    show (EApp lexpr rexpr) = show lexpr ++ "(" ++ show rexpr ++ ")"
-    show (ELet name expr body) = "let " ++ name ++ " = " ++ show expr ++ " in " ++ show body
-    show (ELetRec name expr body) = "let rec " ++ name ++ " = " ++ show expr ++ " in " ++ show body
-    show (ESucc num) = "succ " ++ show num
-    show (EPred num) = "pred " ++ show num
-    show (EAdd lnum rnum) = show lnum ++ " + " ++ show rnum
-    show (ETimes lnum rnum) = show lnum ++ " * " ++ show rnum
-    show (EIsZero num) = show "zero? " ++ show num
-    show (EIf p c a) = "if " ++ show p ++ " then " ++ show c ++ " else " ++ show a
-    show (EFix lambda) = "fix(" ++ show lambda ++ ")"
-    show (EId e) = "id(" ++ show e ++ ")"
-    show (ENot e) = "¬ " ++ show e
-    show (EAnd lexpr rexpr) = show lexpr ++ " ∧ " ++ show rexpr
-    show (EEq lexpr rexpr) = show lexpr ++ " ≡ " ++ show rexpr
-    show (ECompose lfun rfun) = show lfun ++ " ∘ " ++ show rfun
-    show ENil = "[]"
-    show (ECons h t) = show h ++ " :: " ++ show t
-    show (EHead l) = "head " ++ show l
-    show (ETail l) = "tail " ++ show l
-    show (EIsEmpty l) = "empty? " ++ show l
-    show (EPair lexpr rexpr) = "(" ++ show lexpr ++ ", " ++ show rexpr ++ ")"
+    show (EVar n) = n
+    show (EAccessor e f) = show e ++ "." ++ f
+    show (ENum v) = show v
+    show (EStr s) = s
+    show (EChar c) = show c
