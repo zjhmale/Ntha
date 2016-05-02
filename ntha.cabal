@@ -18,6 +18,8 @@ library
                      , Type
   build-depends:       base >= 4.7 && < 5
                      , containers
+                     , pretty
+                     , monad-loops
   default-language:    Haskell2010
 
 executable ntha-exe
