@@ -1,4 +1,4 @@
-module Env where
+module TypeScope where
 
 import Ast
 import Type

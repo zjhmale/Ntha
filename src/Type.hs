@@ -6,15 +6,17 @@ import State
 import Data.IORef
 import qualified Data.Map as M
 
+type Id = Int
 type TName = String
 type TField = String
 type Types = [Type]
+type TInstance = Maybe Type
 
-data Type = TVar TName -- type variable
+data Type = TVar Id (IORef TInstance) TName -- type variable
           | TOper TName (Maybe Types) -- type operator
           | TRecord (M.Map TField Type)
-          | TyCon TName Types Type
-          | ExceptionCon TName Types
+          | TCon TName Types Type
+          | TExceptionCon TName Types
 
 intT :: Type
 intT = TOper "Number" Nothing
@@ -40,10 +42,15 @@ strT = listT charT
 unitT :: Type
 unitT = TOper "()" Nothing
 
+exceptionT :: Type
+exceptionT = TOper "Exception" Nothing
+
 instance Show Type where
-  show (TVar name) = name
+  show (TVar _ _ name) = name
 
 makeVariable :: Infer Type
 makeVariable = do
+    id <- nextId
     name <- nextUniqueName
-    return $ TVar name
+    instRef <- newIORef Nothing
+    return $ TVar id instRef name
