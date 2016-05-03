@@ -31,7 +31,9 @@ currentUniqueName = createState 'α'
 nextUniqueName :: Infer String
 nextUniqueName = do
     char <- readIORef currentUniqueName
-    writeIORef currentUniqueName $ succ char
+    if char == 'ω'
+    then resetUniqueName
+    else writeIORef currentUniqueName $ succ char
     return [char]
 
 resetUniqueName :: Infer ()

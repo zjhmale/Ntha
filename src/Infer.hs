@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TupleSections #-}
 
-module BP.Infer where
+module Infer where
 
 import Ast
 import Type
@@ -9,7 +9,7 @@ import Env
 import State
 import Data.IORef
 import Text.Read (readMaybe)
-import Control.Monad (when, zipWithM_, foldM)
+import Control.Monad (when, zipWithM_, foldM, forM_)
 import Control.Monad.Loops (anyM)
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -85,6 +85,22 @@ unify t1 t2 = do
 
 analyze :: Term -> Env -> NonGeneric -> Infer (Env, Type)
 analyze term env nonGeneric = case term of
+                                ENum -> intT
+                                EBool -> boolT
+                                EChar -> charT
+                                EStr -> strT
+                                EUnit -> unitT
+                                EList exprs -> do
+                                  valueT <- makeVariable
+                                  -- type checking procedure, since types of elems in a list should be the same.
+                                  forM_ exprs (\e -> unify e valueT)
+                                  return (env, listT valueT)
+                                ETuple exprs -> do
+                                  types <- foldM (\types expr -> do
+                                                    (_, ty) <- analyze
+                                                    return $ types ++ [ty])
+                                                 [] exprs
+                                  return (env, productT types)
                                 Ident name -> (env,) <$> getType name env nonGeneric
                                 Apply fn arg -> do
                                   (_, fnT) <- analyze fn env nonGeneric

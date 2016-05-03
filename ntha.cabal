@@ -16,6 +16,9 @@ library
   hs-source-dirs:      src
   exposed-modules:     Ast
                      , Type
+                     , State
+                     , Env
+                     , Infer
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , pretty

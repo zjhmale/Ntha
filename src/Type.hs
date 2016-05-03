@@ -25,10 +25,10 @@ boolT = TOper "Boolean" Nothing
 charT :: Type
 charT = TOper "Char" Nothing
 
-listT :: Type -> Type
+listT :: Type -> Type -- list type is not polymorphism
 listT t = TOper "List" $ Just [t]
 
-productT :: Types -> Type
+productT :: Types -> Type -- tuple type, product type is a name from Algebraic Data type
 productT ts = TOper "*" $ Just ts
 
 functionT :: Types -> Type -> Type
@@ -39,6 +39,9 @@ strT = listT charT
 
 unitT :: Type
 unitT = TOper "()" Nothing
+
+instance Show Type where
+  show (TVar name) = name
 
 makeVariable :: Infer Type
 makeVariable = do
