@@ -11,6 +11,7 @@ import Data.IORef
 import Text.Read (readMaybe)
 import Control.Monad (when, zipWithM_, foldM, forM_)
 import Control.Monad.Loops (anyM)
+import Control.Monad.IfElse (whenM)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Prelude hiding (lookup)
@@ -64,7 +65,7 @@ fresh t nonGeneric = do
                                           TCon name types dataType -> do
                                             newTypes <- mapM freshrec types
                                             newDataType <- freshrec dataType
-                                            return $ TCon newTypes newDataType
+                                            return $ TCon name newTypes newDataType
                                           TRecord valueTypes -> do
                                             newValueTypes <- foldM (\acc (k, v) -> do
                                                                     fv <- freshrec v
@@ -100,24 +101,31 @@ unify t1 t2 = do
     (a@(TOper name1 types1), b@(TOper name2 types2)) -> if name1 /= name2 || (length types1) /= (length types2)
                                                        then error $ "Type mismatch " ++ show a ++ " ≠ " ++ show b
                                                        else zipWithM_ unify types1 types2
-    (a@(TRecord types1), b@(TRecord types2)) -> mapM (\(k, t2) -> do
-                                                      case M.lookup k types1 of
-                                                        Just t1 -> unify t2 t1
-                                                        Nothing -> error $ "Cannot unify, no field " ++ k ++ " " ++ show a ++ ", " ++ show b)
-                                                    $ M.toList types2
+    (a@(TRecord types1), b@(TRecord types2)) -> mapM_ (\(k, t2) -> do
+                                                        case M.lookup k types1 of
+                                                          Just t1 -> unify t2 t1
+                                                          Nothing -> error $ "Cannot unify, no field " ++ k ++ " " ++ show a ++ ", " ++ show b)
+                                                      $ M.toList types2
     _ -> error $ "Can not unify " ++ show t1 ++ ", " ++ show t2
 
-analyze :: AstNode -> TypeScope -> NonGeneric -> Infer (Env, Type)
+isNotException :: Type -> Infer Bool
+isNotException t = do
+  tP <- prune t
+  return $ tP /= exceptionT
+
+analyze :: Expr -> TypeScope -> NonGeneric -> Infer (TypeScope, Type)
 analyze term scope nonGeneric = case term of
-                                ENum -> intT
-                                EBool -> boolT
-                                EChar -> charT
-                                EStr -> strT
-                                EUnit -> unitT
+                                ENum _ -> return (scope, intT)
+                                EBool _ -> return (scope, boolT)
+                                EChar _ -> return (scope, charT)
+                                EStr _ -> return (scope, strT)
+                                EUnit -> return (scope, unitT)
                                 EList exprs -> do
                                   valueT <- makeVariable
                                   -- type checking procedure, since types of elems in a list should be the same.
-                                  forM_ exprs (\e -> unify e valueT)
+                                  forM_ exprs (\e -> do
+                                                (_, eT) <- analyze e scope nonGeneric
+                                                unify valueT eT)
                                   return (scope, listT valueT)
                                 ETuple exprs -> do
                                   types <- foldM (\types expr -> do
@@ -136,7 +144,7 @@ analyze term scope nonGeneric = case term of
                                   (_, fnT) <- analyze fn scope nonGeneric
                                   (_, argT) <- analyze arg scope nonGeneric
                                   rtnT <- makeVariable
-                                  unify (functionT argT rtnT) fnT
+                                  unify (functionT [argT] rtnT) fnT
                                   return (scope, rtnT)
                                 EAccessor obj field -> do
                                   (_, objT) <- analyze obj scope nonGeneric
@@ -144,44 +152,21 @@ analyze term scope nonGeneric = case term of
                                   let desiredT = TRecord $ M.fromList [(field, fieldT)]
                                   unify objT desiredT
                                   return (scope, fieldT)
-                                Lambda arg body -> do
-                                  argT <- makeVariable
-                                  (_, rtnT) <- analyze body (M.insert arg argT env) (S.insert argT nonGeneric) -- non generic on lambda arg type
-                                  return $ (env, functionT argT rtnT)
-                                Function fnName params body annoT -> do
-                                  (types, newEnv, newNonGeneric) <- foldM (\(types', env', nonGeneric') (Param name t) ->
-                                                                          case t of
-                                                                            Just t' -> return (types' ++ [t'], M.insert name t' env', S.insert t' nonGeneric')
-                                                                            Nothing -> do
-                                                                              t' <- makeVariable
-                                                                              return (types' ++ [t'], M.insert name t' env', S.insert t' nonGeneric'))
-                                                                          ([], env, nonGeneric) params
-                                  (_, rtnT) <- analyze body newEnv newNonGeneric
-                                  let newTypes = types ++ [rtnT]
-                                  case annoT of
-                                    Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
-                                    Nothing -> return ()
-                                  let functionType = functionMT newTypes
-                                  return $ (M.insert fnName functionType env, functionType)
-                                Call fn args -> do
-                                  types <- mapM (\arg -> snd <$> analyze arg env nonGeneric) args
-                                  rtnT <- makeVariable
-                                  let newTypes = types ++ [rtnT]
-                                  (_, fnT) <- analyze fn env nonGeneric
-                                  unify (functionMT newTypes) fnT
-                                  return (env, rtnT)
-                                Let n def body -> do
-                                  (_, defT) <- analyze def env nonGeneric
-                                  analyze body (M.insert n defT env) nonGeneric
-                                LetBinding n def annoT -> do
-                                  (_, defT) <- analyze def env nonGeneric
-                                  case annoT of
-                                    Just annoT' -> unify defT annoT' -- type checking
-                                    Nothing -> return ()
-                                  return (M.insert n defT env, defT)
-                                LetRec n def body -> do
-                                  newT <- makeVariable
-                                  let newEnv = M.insert n newT env
-                                  (_, defT) <- analyze def newEnv (S.insert newT nonGeneric)
-                                  unify newT defT
-                                  analyze body newEnv nonGeneric
+                                EIf cond thenInstructions elseInstructions -> do
+                                  (_, condT) <- analyze cond scope nonGeneric
+                                  whenM (isNotException condT) $ unify condT boolT
+                                  (newScope, thenT) <- foldM (\(env, _) instr -> do
+                                                              (newEnv, instrT) <- analyze instr env nonGeneric
+                                                              return (newEnv, instrT))
+                                                             (scope, unitT) thenInstructions
+                                  (newScope', elseT) <- foldM (\(env, _) instr -> do
+                                                        (newEnv, instrT) <- analyze instr env nonGeneric
+                                                        return (newEnv, instrT))
+                                                      (newScope, unitT) elseInstructions
+                                  isThenNotExcept <- isNotException thenT
+                                  isElseNotExcept <- isNotException elseT
+                                  when (isThenNotExcept && isElseNotExcept) $ unify thenT elseT
+                                  isThenNotExcept' <- isNotException thenT
+                                  if isThenNotExcept'
+                                  then return (newScope', thenT)
+                                  else return (newScope', elseT)

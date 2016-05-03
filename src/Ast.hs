@@ -11,14 +11,27 @@ type EName = String -- variable name
 type EField = String
 type EIndent = Int
 
-data AstNode = Program [Instruction]
-             | Instruction
-
-data Instruction = Expr
-                 | LetBinding EName (Maybe Type) [Named] [Instruction]
-                 | DestructLetBinding Pattern [Pattern] [Instruction]
-                 | DataDecl EName Type [Type] [TypeConstructor]
-                 | ExceptionDecl EName [Type]
+data Expr = EVar EName
+          | EAccessor Expr EField
+          | ENum Int
+          | EStr String
+          | EChar Char
+          | EBool Bool
+          | EList [Expr]
+          | ETuple [Expr]
+          | ERecord (M.Map EField Expr)
+          | EUnit
+          | ELambda [Named] (Maybe Type) [Expr]
+          | EApp Expr Expr
+          | ETryCatch [Expr] [Case]
+          | EThrow Expr
+          | EIf Expr [Expr] [Expr]
+          | PatternMatching Expr [Case]
+          | LetBinding EName (Maybe Type) [Named] [Expr]
+          | DestructLetBinding Pattern [Pattern] [Expr]
+          | DataDecl EName Type [Type] [TypeConstructor]
+          | ExceptionDecl EName [Type]
+          | Program [Expr]
 
 data TypeConstructor = TypeConstructor [EName] (Maybe [Type])
 
@@ -29,25 +42,7 @@ data Pattern = WildcardPattern
              | TuplePattern [Pattern]
              | TyConPattern EName [Pattern]
 
-data Case = Case Pattern [Instruction]
-
-data Expr =
-    EVar EName
-  | EAccessor Expr EField
-  | ENum Int
-  | EStr String
-  | EChar Char
-  | EBool Bool
-  | EList [Expr]
-  | ETuple [Expr]
-  | ERecord (M.Map EField Expr)
-  | EUnit
-  | ELambda [Named] (Maybe Type) [Instruction]
-  | EApp Expr Expr
-  | ETryCatch [Instruction] [Case]
-  | EThrow Expr
-  | EIf Expr Expr Expr
-  | PatternMatching Expr [Case]
+data Case = Case Pattern [Expr]
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"

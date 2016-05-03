@@ -16,13 +16,14 @@ library
   hs-source-dirs:      src
   exposed-modules:     Ast
                      , Type
+                     , TypeScope
                      , State
-                     , Env
                      , Infer
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , pretty
                      , monad-loops
+                     , IfElse
   default-language:    Haskell2010
 
 executable ntha-exe
