@@ -285,3 +285,24 @@ analyze term scope nonGeneric = case term of
                                     (_, exT) <- analyze exception scope nonGeneric
                                     unify exT exceptionT -- a little non-sense here
                                     return (scope, exceptionT)
+                                  EPatternMatching input cases -> do
+                                    (_, inputT) <- analyze input scope nonGeneric
+                                    resT <- makeVariable
+                                    (resT', allExceptions) <- foldM (\(rt, allExcept) (Case pat outcomes) -> do
+                                                                      let newScope = child scope
+                                                                      (newScope', newNonGeneric, patT) <- visitPattern pat newScope nonGeneric
+                                                                      whenM (isNotException inputT) $ unify patT inputT
+                                                                      (_, caseT) <- foldM (\(env, caseT) outcome -> analyze outcome env nonGeneric)
+                                                                                          (newScope', unitT) outcomes
+                                                                      isCaseNotException <- isNotException caseT
+                                                                      if isCaseNotException
+                                                                      then do
+                                                                        unify caseT rt
+                                                                        return (rt, False)
+                                                                      else return (rt, allExcept))
+                                                                    (resT, True) cases
+                                    if allExceptions
+                                    then return (scope, exceptionT)
+                                    else return (scope, resT')
+
+
