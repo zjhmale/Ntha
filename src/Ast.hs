@@ -50,16 +50,6 @@ tab i = intercalate "" $ take i $ repeat "\t"
 
 stringOfExpr :: Expr -> String
 stringOfExpr e = case e of
-                  EVar _ -> reprOfExpr 0 e
-                  EAccessor _ _ -> reprOfExpr 0 e
-                  ENum _ -> reprOfExpr 0 e
-                  EStr _ -> reprOfExpr 0 e
-                  EChar _ -> reprOfExpr 0 e
-                  EUnit -> reprOfExpr 0 e
-                  EBool _ -> reprOfExpr 0 e
-                  EList _ -> reprOfExpr 0 e
-                  ETuple _ -> reprOfExpr 0 e
-                  ERecord _ -> reprOfExpr 0 e
                   EApp fn arg -> "<" ++ show fn ++ ">(" ++ show arg ++ ")"
                   ELambda params annoT body -> "λ" ++ unwords (map (\(Named name t) -> name ++ case t of
                                                                                       Just t' -> ":" ++ show t'
@@ -69,30 +59,37 @@ stringOfExpr e = case e of
                   EThrow _ -> reprOfExpr 0 e
                   EIf cond thenInstrs elseInstrs -> "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ "else \n" ++ stringOfInstrs elseInstrs where
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ show instr ++ "\n") instrs
-                  EPatternMatching _ _ -> reprOfExpr 0 e
+                  _ -> reprOfExpr 0 e
+
+stringOfCase :: EIndent -> Case -> String
+stringOfCase i (Case pat outcomes) = "\n" ++ tab i ++ show pat ++ " ⇒ " ++ show outcomes
+
+stringOfCases :: EIndent -> [Case] -> String
+stringOfCases i cases = intercalate "" (map (stringOfCase i) cases)
 
 reprOfExpr :: EIndent -> Expr -> String
 reprOfExpr i e = case e of
-                    EVar n -> tab i ++ n
-                    EAccessor e' f -> tab i ++ reprOfExpr 0 e' ++ "." ++ f
-                    ENum v -> tab i ++ show v
-                    EStr v -> tab i ++ v
-                    EChar v -> tab i ++ [v]
-                    EBool v -> tab i ++ show v
-                    EUnit -> tab i ++ "()"
-                    EList es -> tab i ++ show es
-                    ETuple es -> "(" ++ intercalate "," (map (reprOfExpr 0) es) ++ ")"
-                    ERecord pairs -> "{" ++ intercalate "," (M.keys $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
-                    EApp _ _ -> tab i ++ show e
-                    ELambda params annoT body -> tab i ++ "λ" ++ unwords (map (\(Named name t) -> name ++ case t of
-                                                                                                          Just t' -> ":" ++ show t'
-                                                                                                          Nothing -> "") params) ++ (case annoT of
-                                                                                                                                      Just annoT' -> " : " ++ show annoT'
-                                                                                                                                      Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
-                    EThrow exception -> tab i ++ "throw " ++ reprOfExpr 0 exception
-                    EIf cond thenInstrs elseInstrs -> tab i ++ "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ tab i ++ "else \n" ++ stringOfInstrs elseInstrs where
-                      stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
-                    EPatternMatching input cases -> tab i ++ "match " ++ show input ++ intercalate "" (map (\(Case pat outcomes) -> "\n" ++ tab i ++ show pat ++ " ⇒ " ++ show outcomes) cases)
+                  EVar n -> tab i ++ n
+                  EAccessor e' f -> tab i ++ reprOfExpr 0 e' ++ "." ++ f
+                  ENum v -> tab i ++ show v
+                  EStr v -> tab i ++ v
+                  EChar v -> tab i ++ [v]
+                  EBool v -> tab i ++ show v
+                  EUnit -> tab i ++ "()"
+                  EList es -> tab i ++ show es
+                  ETuple es -> "(" ++ intercalate "," (map (reprOfExpr 0) es) ++ ")"
+                  ERecord pairs -> "{" ++ intercalate "," (M.keys $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
+                  EApp _ _ -> tab i ++ show e
+                  ELambda params annoT body -> tab i ++ "λ" ++ unwords (map (\(Named name t) -> name ++ case t of
+                                                                                                        Just t' -> ":" ++ show t'
+                                                                                                        Nothing -> "") params) ++ (case annoT of
+                                                                                                                                    Just annoT' -> " : " ++ show annoT'
+                                                                                                                                    Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
+                  EThrow exception -> tab i ++ "throw " ++ reprOfExpr 0 exception
+                  EIf cond thenInstrs elseInstrs -> tab i ++ "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ tab i ++ "else \n" ++ stringOfInstrs elseInstrs where
+                    stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
+                  EPatternMatching input cases -> tab i ++ "match " ++ show input ++ stringOfCases i cases
+                  ETryCatch tryBody catchCases -> tab i ++ "try\n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") tryBody) ++ tab i ++ "catch\n" ++ stringOfCases i catchCases
 
 instance Show Expr where
     showsPrec _ x = shows $ PP.text $ stringOfExpr x
