@@ -130,7 +130,7 @@ visitPattern pattern scope nonGeneric = case pattern of
                                             (patTypes, newScope, newNonGeneric) <- foldM (\(types, env, nonGen) pat -> do
                                                                                             (newEnv, newNonGen, patT) <- visitPattern pat env nonGen
                                                                                             return (types ++ [patT], newEnv, newNonGen))
-                                                                                          ([], scope, nonGeneric) patterns
+                                                                                         ([], scope, nonGeneric) patterns
                                             case lookup name newScope of
                                               Nothing -> error $ "Unknow type constructor " ++ name
                                               Just tconT -> case tconT of
@@ -148,6 +148,29 @@ visitPattern pattern scope nonGeneric = case pattern of
                                                                 zipWithM_ unify patTypes types
                                                                 return (newScope, newNonGeneric, exceptionT)
                                                             _ -> error $ "Invalid type constructor " ++ name
+
+definePattern :: Pattern -> Type -> TypeScope -> Infer TypeScope
+definePattern pattern t scope = do
+  tP <- prune t
+  case pattern of
+    WildcardPattern -> return scope
+    IdPattern name -> return $ insert name tP scope
+    TuplePattern items -> case tP of
+                          TOper _ types -> do
+                            newScope <- foldM (\env (pat, patT) -> do
+                                                newEnv <- definePattern pat patT env
+                                                return newEnv)
+                                              scope $ zip items types
+                            return newScope
+                          _ -> error $ "Invalid type " ++ show tP ++ " for pattern " ++ show pattern
+    TConPattern _ patterns -> case tP of
+                              TCon _ types _ -> do
+                                newScope <- foldM (\env (pat, patT) -> do
+                                                    newEnv <- definePattern pat patT env
+                                                    return newEnv)
+                                                  scope $ zip patterns types
+                                return newScope
+                              _ -> error $ "Invalid type " ++ show tP ++ " for pattern " ++ show pattern
 
 analyze :: Expr -> TypeScope -> NonGeneric -> Infer (TypeScope, Type)
 analyze term scope nonGeneric = case term of
@@ -238,5 +261,16 @@ analyze term scope nonGeneric = case term of
                                       Nothing -> return ()
                                     let letT = functionT paramTypes rtnT
                                     return (insert name letT scope, letT)
-                                  EDestructLetBinding main args instructions -> undefined --do
-                                    --let newScope = child scope
+                                  EDestructLetBinding main args instructions -> do
+                                    let newScope = child scope
+                                    (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric
+                                    let newNonGeneric' = S.insert letTV newNonGeneric
+                                    (argTypes, newScope'', newNonGeneric'') <- foldM (\(types, env, nonGen) arg -> do
+                                                                                      (newEnv, newNonGen, argT) <- visitPattern arg env nonGen
+                                                                                      return (types ++ [argT], newEnv, newNonGen))
+                                                                                     ([], newScope', newNonGeneric') args
+                                    rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope'' newNonGeneric'') unitT instructions
+                                    let letT = functionT argTypes rtnT
+                                    newScope''' <- definePattern main letT newScope''
+                                    return (newScope''', letT)
+
