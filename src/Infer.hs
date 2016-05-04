@@ -278,4 +278,6 @@ analyze term scope nonGeneric = case term of
                                                           insert conName (TCon conName conTypes t) env)
                                                          scope tconstructors
                                     return (newScope, t)
-
+                                  EExceptionDecl name types -> do
+                                    let newScope = insert name (TExceptionCon name types) scope
+                                    return (newScope, exceptionT)
