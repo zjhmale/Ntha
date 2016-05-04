@@ -281,3 +281,7 @@ analyze term scope nonGeneric = case term of
                                   EExceptionDecl name types -> do
                                     let newScope = insert name (TExceptionCon name types) scope
                                     return (newScope, exceptionT)
+                                  EThrow exception -> do
+                                    (_, exT) <- analyze exception scope nonGeneric
+                                    unify exT exceptionT -- a little non-sense here
+                                    return (scope, exceptionT)
