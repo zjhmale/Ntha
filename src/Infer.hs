@@ -316,4 +316,16 @@ analyze term scope nonGeneric = case term of
                                                     return rt)
                                              resT catchCases
                                     return (scope, resT')
-
+                                  EProgram instructions -> do
+                                    -- pre define procedure
+                                    newScope <- foldM (\env instr -> do
+                                                        case instr of
+                                                          ELetBinding name _ params _ -> if (length params) > 0
+                                                                                        then do
+                                                                                           tvarA <- makeVariable
+                                                                                           tvarB <- makeVariable
+                                                                                           return $ insert name (functionT [tvarA] tvarB) env
+                                                                                        else return env
+                                                          _ -> return env)
+                                                      scope instructions
+                                    foldM (\(env, _) instr -> analyze instr env nonGeneric) (newScope, unitT) instructions
