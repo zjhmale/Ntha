@@ -10,6 +10,7 @@ import qualified Text.PrettyPrint as PP
 type EName = String -- variable name
 type EField = String
 type EIndent = Int
+type TypeVariable = Type -- just for documentation
 
 data Expr = EVar EName
           | EAccessor Expr EField
@@ -29,11 +30,11 @@ data Expr = EVar EName
           | EPatternMatching Expr [Case]
           | ELetBinding EName (Maybe Type) [Named] [Expr]
           | EDestructLetBinding Pattern [Pattern] [Expr]
-          | EDataDecl EName Type [Type] [TypeConstructor]
+          | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EExceptionDecl EName [Type]
           | EProgram [Expr]
 
-data TypeConstructor = TypeConstructor [EName] (Maybe [Type])
+data TypeConstructor = TypeConstructor EName [Type]
 
 data Named = Named EName (Maybe Type)
 

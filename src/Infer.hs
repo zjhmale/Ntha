@@ -273,4 +273,9 @@ analyze term scope nonGeneric = case term of
                                     let letT = functionT argTypes rtnT
                                     newScope''' <- definePattern main letT newScope''
                                     return (newScope''', letT)
+                                  EDataDecl _ t _ tconstructors -> do
+                                    let newScope = foldl (\env (TypeConstructor conName conTypes) ->
+                                                          insert conName (TCon conName conTypes t) env)
+                                                         scope tconstructors
+                                    return (newScope, t)
 
