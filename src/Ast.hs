@@ -63,7 +63,7 @@ stringOfExpr e = case e of
 reprOfExpr :: EIndent -> Expr -> String
 reprOfExpr i e = case e of
                     EVar n -> tab i ++ n
-                    EAccessor e f -> tab i ++ reprOfExpr 0 e ++ "." ++ f
+                    EAccessor e' f -> tab i ++ reprOfExpr 0 e' ++ "." ++ f
                     ENum v -> tab i ++ show v
                     EStr v -> tab i ++ v
                     EChar v -> tab i ++ [v]

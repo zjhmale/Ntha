@@ -63,7 +63,7 @@ instance Ord Type where
 
 makeVariable :: Infer Type
 makeVariable = do
-    id <- nextId
+    i <- nextId
     name <- nextUniqueName
     instRef <- newIORef Nothing
-    return $ TVar id instRef name
+    return $ TVar i instRef name

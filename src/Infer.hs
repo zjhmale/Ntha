@@ -8,7 +8,6 @@ import Type
 import TypeScope
 import State
 import Data.IORef
-import Text.Read (readMaybe)
 import Control.Monad (when, zipWithM_, foldM, forM_)
 import Control.Monad.Loops (anyM)
 import Control.Monad.IfElse (whenM)
@@ -82,8 +81,8 @@ getType name scope nonGeneric = case lookup name scope of
 
 adjustType :: Type -> Type
 adjustType t = case t of
-                TCon name types dataType -> functionT types dataType
-                TExceptionCon name types -> functionT types exceptionT
+                TCon _ types dataType -> functionT types dataType
+                TExceptionCon _ types -> functionT types exceptionT
                 _ -> t
 
 unify :: Type -> Type -> Infer ()
@@ -101,9 +100,9 @@ unify t1 t2 = do
     (a@(TOper name1 types1), b@(TOper name2 types2)) -> if name1 /= name2 || (length types1) /= (length types2)
                                                        then error $ "Type mismatch " ++ show a ++ " ≠ " ++ show b
                                                        else zipWithM_ unify types1 types2
-    (a@(TRecord types1), b@(TRecord types2)) -> mapM_ (\(k, t2) -> do
+    (a@(TRecord types1), b@(TRecord types2)) -> mapM_ (\(k, t2') -> do
                                                         case M.lookup k types1 of
-                                                          Just t1 -> unify t2 t1
+                                                          Just t1' -> unify t2' t1'
                                                           Nothing -> error $ "Cannot unify, no field " ++ k ++ " " ++ show a ++ ", " ++ show b)
                                                       $ M.toList types2
     _ -> error $ "Can not unify " ++ show t1 ++ ", " ++ show t2
@@ -146,6 +145,20 @@ analyze term scope nonGeneric = case term of
                                   rtnT <- makeVariable
                                   unify (functionT [argT] rtnT) fnT
                                   return (scope, rtnT)
+                                ELambda params annoT instructions -> do
+                                  let newScope = child scope
+                                  (paramTypes, newScope', newNonGeneric) <- foldM (\(types', env', nonGeneric') (Named name t) ->
+                                                                          case t of
+                                                                            Just t' -> return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric')
+                                                                            Nothing -> do
+                                                                              t' <- makeVariable
+                                                                              return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric'))
+                                                                          ([], newScope, nonGeneric) params
+                                  rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric) unitT instructions
+                                  case annoT of
+                                    Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
+                                    Nothing -> return ()
+                                  return (scope, functionT paramTypes rtnT)
                                 EAccessor obj field -> do
                                   (_, objT) <- analyze obj scope nonGeneric
                                   fieldT <- makeVariable
