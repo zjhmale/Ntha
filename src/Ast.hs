@@ -26,12 +26,12 @@ data Expr = EVar EName
           | ETryCatch [Expr] [Case]
           | EThrow Expr
           | EIf Expr [Expr] [Expr]
-          | PatternMatching Expr [Case]
-          | LetBinding EName (Maybe Type) [Named] [Expr]
-          | DestructLetBinding Pattern [Pattern] [Expr]
-          | DataDecl EName Type [Type] [TypeConstructor]
-          | ExceptionDecl EName [Type]
-          | Program [Expr]
+          | EPatternMatching Expr [Case]
+          | ELetBinding EName (Maybe Type) [Named] [Expr]
+          | EDestructLetBinding Pattern [Pattern] [Expr]
+          | EDataDecl EName Type [Type] [TypeConstructor]
+          | EExceptionDecl EName [Type]
+          | EProgram [Expr]
 
 data TypeConstructor = TypeConstructor [EName] (Maybe [Type])
 
