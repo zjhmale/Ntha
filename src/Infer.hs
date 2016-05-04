@@ -112,92 +112,131 @@ isNotException t = do
   tP <- prune t
   return $ tP /= exceptionT
 
+visitPattern :: Pattern -> TypeScope -> NonGeneric -> Infer (TypeScope, NonGeneric, Type)
+visitPattern pattern scope nonGeneric = case pattern of
+                                          WildcardPattern -> do
+                                            resT <- makeVariable
+                                            return (scope, nonGeneric, resT)
+                                          IdPattern name -> do
+                                            resT <- makeVariable
+                                            return (insert name resT scope, S.insert resT nonGeneric, resT)
+                                          TuplePattern items -> do
+                                            (itemTypes, newScope, newNonGeneric) <- foldM (\(types, env, nonGen) item -> do
+                                                                                            (newEnv, newNonGen, itemT) <- visitPattern item env nonGen
+                                                                                            return (types ++ [itemT], newEnv, newNonGen))
+                                                                                          ([], scope, nonGeneric) items
+                                            return (newScope, newNonGeneric, productT itemTypes)
+                                          TConPattern name patterns -> do
+                                            (patTypes, newScope, newNonGeneric) <- foldM (\(types, env, nonGen) pat -> do
+                                                                                            (newEnv, newNonGen, patT) <- visitPattern pat env nonGen
+                                                                                            return (types ++ [patT], newEnv, newNonGen))
+                                                                                          ([], scope, nonGeneric) patterns
+                                            case lookup name newScope of
+                                              Nothing -> error $ "Unknow type constructor " ++ name
+                                              Just tconT -> case tconT of
+                                                            TCon _ _ _ -> do
+                                                              (TCon _ types dataType) <- fresh tconT newNonGeneric
+                                                              if (length patterns) /= (length types)
+                                                              then error $ "Bad arity: case " ++ show pattern ++ " provided " ++ (show . length) patterns ++ " arguments whereas " ++ name ++ " takes " ++ (show . length) types
+                                                              else do
+                                                                zipWithM_ unify patTypes types
+                                                                return (newScope, newNonGeneric, dataType)
+                                                            TExceptionCon _ types -> do
+                                                              if (length patterns) /= (length types)
+                                                              then error $ "Bad arity: case " ++ show pattern ++ " provided " ++ (show . length) patterns ++ " arguments whereas " ++ name ++ " takes " ++ (show . length) types
+                                                              else do
+                                                                zipWithM_ unify patTypes types
+                                                                return (newScope, newNonGeneric, exceptionT)
+                                                            _ -> error $ "Invalid type constructor " ++ name
+
 analyze :: Expr -> TypeScope -> NonGeneric -> Infer (TypeScope, Type)
 analyze term scope nonGeneric = case term of
-                                ENum _ -> return (scope, intT)
-                                EBool _ -> return (scope, boolT)
-                                EChar _ -> return (scope, charT)
-                                EStr _ -> return (scope, strT)
-                                EUnit -> return (scope, unitT)
-                                EList exprs -> do
-                                  valueT <- makeVariable
-                                  -- type checking procedure, since types of elems in a list should be the same.
-                                  forM_ exprs (\e -> do
-                                                (_, eT) <- analyze e scope nonGeneric
-                                                unify valueT eT)
-                                  return (scope, listT valueT)
-                                ETuple exprs -> do
-                                  types <- foldM (\types expr -> do
-                                                    (_, ty) <- analyze expr scope nonGeneric
-                                                    return $ types ++ [ty])
-                                                 [] exprs
-                                  return (scope, productT types)
-                                ERecord pairs -> do
-                                  valueTypes <- foldM (\vts (k, v) -> do
-                                                        (_, t) <- analyze v scope nonGeneric
-                                                        return $ M.insert k t vts)
-                                                      M.empty $ M.toList pairs
-                                  return (scope, TRecord valueTypes)
-                                EVar name -> (scope,) <$> getType name scope nonGeneric
-                                EApp fn arg -> do
-                                  (_, fnT) <- analyze fn scope nonGeneric
-                                  (_, argT) <- analyze arg scope nonGeneric
-                                  rtnT <- makeVariable
-                                  unify (functionT [argT] rtnT) fnT
-                                  return (scope, rtnT)
-                                ELambda params annoT instructions -> do
-                                  let newScope = child scope
-                                  (paramTypes, newScope', newNonGeneric) <- foldM (\(types', env', nonGeneric') (Named name t) ->
-                                                                                  case t of
-                                                                                    Just t' -> return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric')
-                                                                                    Nothing -> do
-                                                                                      t' <- makeVariable
-                                                                                      return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric'))
-                                                                                  ([], newScope, nonGeneric) params
-                                  rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric) unitT instructions
-                                  case annoT of
-                                    Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
-                                    Nothing -> return ()
-                                  return (scope, functionT paramTypes rtnT)
-                                EAccessor obj field -> do
-                                  (_, objT) <- analyze obj scope nonGeneric
-                                  fieldT <- makeVariable
-                                  let desiredT = TRecord $ M.fromList [(field, fieldT)]
-                                  unify objT desiredT
-                                  return (scope, fieldT)
-                                EIf cond thenInstructions elseInstructions -> do
-                                  (_, condT) <- analyze cond scope nonGeneric
-                                  whenM (isNotException condT) $ unify condT boolT
-                                  (newScope, thenT) <- foldM (\(env, _) instr -> do
-                                                              (newEnv, instrT) <- analyze instr env nonGeneric
-                                                              return (newEnv, instrT))
-                                                             (scope, unitT) thenInstructions
-                                  (newScope', elseT) <- foldM (\(env, _) instr -> do
-                                                        (newEnv, instrT) <- analyze instr env nonGeneric
-                                                        return (newEnv, instrT))
-                                                      (newScope, unitT) elseInstructions
-                                  isThenNotExcept <- isNotException thenT
-                                  isElseNotExcept <- isNotException elseT
-                                  when (isThenNotExcept && isElseNotExcept) $ unify thenT elseT
-                                  isThenNotExcept' <- isNotException thenT
-                                  if isThenNotExcept'
-                                  then return (newScope', thenT)
-                                  else return (newScope', elseT)
-                                ELetBinding name annoT params instructions -> do
-                                  letTV <- makeVariable
-                                  -- maybe a little non-sense here just to avoid a function can not be polymorphic to itself
-                                  let newScope = insert name letTV $ child scope
-                                  let newNonGeneric = S.insert letTV nonGeneric
-                                  (paramTypes, newScope', newNonGeneric') <- foldM (\(types', env', nonGeneric') (Named name t) ->
-                                                                                   case t of
-                                                                                     Just t' -> return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric')
-                                                                                     Nothing -> do
-                                                                                       t' <- makeVariable
-                                                                                       return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric'))
-                                                                                   ([], newScope, newNonGeneric) params
-                                  rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric') unitT instructions
-                                  case annoT of
-                                    Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
-                                    Nothing -> return ()
-                                  let letT = functionT paramTypes rtnT
-                                  return (insert name letT scope, letT)
+                                  ENum _ -> return (scope, intT)
+                                  EBool _ -> return (scope, boolT)
+                                  EChar _ -> return (scope, charT)
+                                  EStr _ -> return (scope, strT)
+                                  EUnit -> return (scope, unitT)
+                                  EList exprs -> do
+                                    valueT <- makeVariable
+                                    -- type checking procedure, since types of elems in a list should be the same.
+                                    forM_ exprs (\e -> do
+                                                  (_, eT) <- analyze e scope nonGeneric
+                                                  unify valueT eT)
+                                    return (scope, listT valueT)
+                                  ETuple exprs -> do
+                                    types <- foldM (\types expr -> do
+                                                      (_, ty) <- analyze expr scope nonGeneric
+                                                      return $ types ++ [ty])
+                                                   [] exprs
+                                    return (scope, productT types)
+                                  ERecord pairs -> do
+                                    valueTypes <- foldM (\vts (k, v) -> do
+                                                          (_, t) <- analyze v scope nonGeneric
+                                                          return $ M.insert k t vts)
+                                                        M.empty $ M.toList pairs
+                                    return (scope, TRecord valueTypes)
+                                  EVar name -> (scope,) <$> getType name scope nonGeneric
+                                  EApp fn arg -> do
+                                    (_, fnT) <- analyze fn scope nonGeneric
+                                    (_, argT) <- analyze arg scope nonGeneric
+                                    rtnT <- makeVariable
+                                    unify (functionT [argT] rtnT) fnT
+                                    return (scope, rtnT)
+                                  ELambda params annoT instructions -> do
+                                    let newScope = child scope
+                                    (paramTypes, newScope', newNonGeneric) <- foldM (\(types', env', nonGeneric') (Named name t) ->
+                                                                                    case t of
+                                                                                      Just t' -> return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric')
+                                                                                      Nothing -> do
+                                                                                        t' <- makeVariable
+                                                                                        return (types' ++ [t'], insert name t' env', S.insert t' nonGeneric'))
+                                                                                    ([], newScope, nonGeneric) params
+                                    rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric) unitT instructions
+                                    case annoT of
+                                      Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
+                                      Nothing -> return ()
+                                    return (scope, functionT paramTypes rtnT)
+                                  EAccessor obj field -> do
+                                    (_, objT) <- analyze obj scope nonGeneric
+                                    fieldT <- makeVariable
+                                    let desiredT = TRecord $ M.fromList [(field, fieldT)]
+                                    unify objT desiredT
+                                    return (scope, fieldT)
+                                  EIf cond thenInstructions elseInstructions -> do
+                                    (_, condT) <- analyze cond scope nonGeneric
+                                    whenM (isNotException condT) $ unify condT boolT
+                                    (newScope, thenT) <- foldM (\(env, _) instr -> do
+                                                                (newEnv, instrT) <- analyze instr env nonGeneric
+                                                                return (newEnv, instrT))
+                                                               (scope, unitT) thenInstructions
+                                    (newScope', elseT) <- foldM (\(env, _) instr -> do
+                                                          (newEnv, instrT) <- analyze instr env nonGeneric
+                                                          return (newEnv, instrT))
+                                                        (newScope, unitT) elseInstructions
+                                    isThenNotExcept <- isNotException thenT
+                                    isElseNotExcept <- isNotException elseT
+                                    when (isThenNotExcept && isElseNotExcept) $ unify thenT elseT
+                                    isThenNotExcept' <- isNotException thenT
+                                    if isThenNotExcept'
+                                    then return (newScope', thenT)
+                                    else return (newScope', elseT)
+                                  ELetBinding name annoT params instructions -> do
+                                    letTV <- makeVariable
+                                    -- maybe a little non-sense here just to avoid a function can not be polymorphic to itself
+                                    let newScope = insert name letTV $ child scope
+                                    let newNonGeneric = S.insert letTV nonGeneric
+                                    (paramTypes, newScope', newNonGeneric') <- foldM (\(types', env', nonGeneric') (Named name' t) ->
+                                                                                     case t of
+                                                                                       Just t' -> return (types' ++ [t'], insert name' t' env', S.insert t' nonGeneric')
+                                                                                       Nothing -> do
+                                                                                         t' <- makeVariable
+                                                                                         return (types' ++ [t'], insert name' t' env', S.insert t' nonGeneric'))
+                                                                                     ([], newScope, newNonGeneric) params
+                                    rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric') unitT instructions
+                                    case annoT of
+                                      Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
+                                      Nothing -> return ()
+                                    let letT = functionT paramTypes rtnT
+                                    return (insert name letT scope, letT)
+                                  EDestructLetBinding main args instructions -> undefined --do
+                                    --let newScope = child scope

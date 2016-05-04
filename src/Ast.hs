@@ -40,7 +40,7 @@ data Named = Named EName (Maybe Type)
 data Pattern = WildcardPattern
              | IdPattern EName
              | TuplePattern [Pattern]
-             | TyConPattern EName [Pattern]
+             | TConPattern EName [Pattern]
 
 data Case = Case Pattern [Expr]
 
@@ -79,3 +79,6 @@ instance Show Expr where
     show (ENum v) = show v
     show (EStr s) = s
     show (EChar c) = show c
+
+instance Show Pattern where
+    show WildcardPattern = "_"
