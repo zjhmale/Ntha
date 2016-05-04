@@ -228,14 +228,10 @@ analyze term scope nonGeneric = case term of
                                   EIf cond thenInstructions elseInstructions -> do
                                     (_, condT) <- analyze cond scope nonGeneric
                                     whenM (isNotException condT) $ unify condT boolT
-                                    (newScope, thenT) <- foldM (\(env, _) instr -> do
-                                                                (newEnv, instrT) <- analyze instr env nonGeneric
-                                                                return (newEnv, instrT))
+                                    (newScope, thenT) <- foldM (\(env, _) instr -> analyze instr env nonGeneric)
                                                                (scope, unitT) thenInstructions
-                                    (newScope', elseT) <- foldM (\(env, _) instr -> do
-                                                          (newEnv, instrT) <- analyze instr env nonGeneric
-                                                          return (newEnv, instrT))
-                                                        (newScope, unitT) elseInstructions
+                                    (newScope', elseT) <- foldM (\(env, _) instr -> analyze instr env nonGeneric)
+                                                               (newScope, unitT) elseInstructions
                                     isThenNotExcept <- isNotException thenT
                                     isElseNotExcept <- isNotException elseT
                                     when (isThenNotExcept && isElseNotExcept) $ unify thenT elseT
@@ -292,7 +288,7 @@ analyze term scope nonGeneric = case term of
                                                                       let newScope = child scope
                                                                       (newScope', newNonGeneric, patT) <- visitPattern pat newScope nonGeneric
                                                                       whenM (isNotException inputT) $ unify patT inputT
-                                                                      (_, caseT) <- foldM (\(env, caseT) outcome -> analyze outcome env nonGeneric)
+                                                                      (_, caseT) <- foldM (\(env, _) outcome -> analyze outcome env newNonGeneric)
                                                                                           (newScope', unitT) outcomes
                                                                       isCaseNotException <- isNotException caseT
                                                                       if isCaseNotException
@@ -304,5 +300,20 @@ analyze term scope nonGeneric = case term of
                                     if allExceptions
                                     then return (scope, exceptionT)
                                     else return (scope, resT')
-
+                                  ETryCatch tryBody catchCases -> do
+                                    (_, tryT) <- foldM (\(env, _) instr -> analyze instr env nonGeneric)
+                                                      (scope, unitT) tryBody
+                                    tryTP <- prune tryT
+                                    resT <- makeVariable
+                                    whenM (isNotException tryTP) $ unify tryTP resT
+                                    resT' <- foldM (\rt (Case pat outcomes) -> do
+                                                    let newScope = child scope
+                                                    (_, _, patT) <- visitPattern pat newScope nonGeneric
+                                                    unify patT exceptionT
+                                                    (_, caseT) <- foldM (\(env, _) outcome -> analyze outcome env nonGeneric)
+                                                                        (newScope, unitT) outcomes
+                                                    unify caseT rt
+                                                    return rt)
+                                             resT catchCases
+                                    return (scope, resT')
 
