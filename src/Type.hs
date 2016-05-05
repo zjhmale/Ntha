@@ -99,6 +99,11 @@ instance Eq Type where
   TVar id1 inst1 vname1 == TVar id2 inst2 vname2 = id1 == id2 && instV1 == instV2 && vname1 == vname2 where
     instV1 = readState inst1
     instV2 = readState inst2
+  TOper name1 args1 == TOper name2 args2 = name1 == name2 && args1 == args2
+  TRecord pairs1 == TRecord pairs2 = pairs1 == pairs2
+  TCon name1 types1 dataType1 == TCon name2 types2 dataType2 = name1 == name2 && types1 == types2 && dataType1 == dataType2
+  TExceptionCon name1 types1 == TExceptionCon name2 types2 = name1 == name2 && types1 == types2
+  _ == _ = False
 
 instance Ord Type where
     TVar id1 inst1 vname1 <= TVar id2 inst2 vname2 = id1 <= id2 && instV1 <= instV2 && vname1 <= vname2 where
