@@ -8,11 +8,17 @@ import ValueScope
 import Prelude hiding (lookup)
 import qualified Data.Map as M
 
+makeList :: [Value] -> Value
+makeList res = case res of
+                [] -> nil
+                x:xs -> cons x $ makeList xs
+
 eval :: Expr -> ValueScope -> Value
 eval expr scope = case expr of
                     ENum v -> VNum v
                     EBool v -> VBool v
                     EChar v -> VChar v
+                    EStr v -> makeList $ map VChar v
                     EUnit -> VUnit
                     EVar name -> case lookup name scope of
                                   Just val -> val
