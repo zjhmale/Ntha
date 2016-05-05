@@ -98,7 +98,9 @@ reprOfExpr i e = case e of
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
                   EPatternMatching input cases -> tab i ++ "match " ++ show input ++ stringOfCases i cases
                   ETryCatch tryBody catchCases -> tab i ++ "try\n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") tryBody) ++ tab i ++ "catch\n" ++ stringOfCases i catchCases
-                  EDataDecl name _ tvars tcons -> tab i ++ "data " ++ name ++ " " ++ unwords (map show tvars) ++ " = " ++ intercalate " | " (map (\(TypeConstructor name' types) -> name' ++ unwords (map show types)) tcons)
+                  EDataDecl name _ tvars tcons -> tab i ++ "data " ++ name ++ " " ++ unwords (map show tvars) ++ " = " ++ intercalate " | " (map (\(TypeConstructor name' types) -> name' ++ case types of
+                                                                                                                                                                                            [] -> ""
+                                                                                                                                                                                            _ -> " " ++ unwords (map show types)) tcons)
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
                   EExceptionDecl name types -> tab i ++ "exception " ++ name ++ unwords (map show types)
                   ELetBinding name t args instrs -> tab i ++ "let " ++ name ++ " " ++ stringofNameds args ++ (case t of

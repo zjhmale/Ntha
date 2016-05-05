@@ -84,9 +84,12 @@ stringOfType (TRecord pairs) = do
   pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> (k ++) <$> stringOfType v) $ M.toList pairs)
   return $ "{" ++ pairsStr ++ "}"
 stringOfType (TCon name types dataType) = do
-  typesStr <- (intercalate ", ") <$> mapM stringOfType types
   dataTypeStr <- stringOfType dataType
-  return $ "(" ++ name ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
+  case types of
+    [] -> return dataTypeStr
+    _ -> do
+      typesStr <- (intercalate ", ") <$> mapM stringOfType types
+      return $ "(" ++ name ++ " " ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
 stringOfType (TExceptionCon name types) = do
   typesStr <- (intercalate ", ") <$> mapM stringOfType types
   exceptStr <- stringOfType exceptionT
