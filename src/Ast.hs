@@ -48,17 +48,27 @@ data Case = Case Pattern [Expr]
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"
 
+stringOfNamed :: Named -> String
+stringOfNamed (Named name t) = name ++ case t of
+                                        Just t' -> ":" ++ show t'
+                                        Nothing -> ""
+
+stringofNameds :: [Named] -> String
+stringofNameds = unwords . (map stringOfNamed)
+
 stringOfExpr :: Expr -> String
 stringOfExpr e = case e of
                   EApp fn arg -> "<" ++ show fn ++ ">(" ++ show arg ++ ")"
-                  ELambda params annoT body -> "λ" ++ unwords (map (\(Named name t) -> name ++ case t of
-                                                                                      Just t' -> ":" ++ show t'
-                                                                                      Nothing -> "") params) ++ (case annoT of
-                                                                                                                Just annoT' -> " : " ++ show annoT'
-                                                                                                                Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") body)
+                  ELambda params annoT body -> "λ" ++ stringofNameds params ++ (case annoT of
+                                                                                Just annoT' -> " : " ++ show annoT'
+                                                                                Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") body)
                   EThrow _ -> reprOfExpr 0 e
                   EIf cond thenInstrs elseInstrs -> "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ "else \n" ++ stringOfInstrs elseInstrs where
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ show instr ++ "\n") instrs
+                  ELetBinding name t args instrs -> "let " ++ name ++ " " ++ stringofNameds args ++ (case t of
+                                                                                                      Just t' -> " : " ++ show t'
+                                                                                                      Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") instrs)
+                  EProgram instrs -> intercalate "" $ map (\instr -> show instr ++ "\n") instrs
                   _ -> reprOfExpr 0 e
 
 stringOfCase :: EIndent -> Case -> String
@@ -80,19 +90,27 @@ reprOfExpr i e = case e of
                   ETuple es -> "(" ++ intercalate "," (map (reprOfExpr 0) es) ++ ")"
                   ERecord pairs -> "{" ++ intercalate "," (M.keys $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
                   EApp _ _ -> tab i ++ show e
-                  ELambda params annoT body -> tab i ++ "λ" ++ unwords (map (\(Named name t) -> name ++ case t of
-                                                                                                        Just t' -> ":" ++ show t'
-                                                                                                        Nothing -> "") params) ++ (case annoT of
-                                                                                                                                    Just annoT' -> " : " ++ show annoT'
-                                                                                                                                    Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
+                  ELambda params annoT body -> tab i ++ "λ" ++ stringofNameds params ++ (case annoT of
+                                                                                         Just annoT' -> " : " ++ show annoT'
+                                                                                         Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
                   EThrow exception -> tab i ++ "throw " ++ reprOfExpr 0 exception
                   EIf cond thenInstrs elseInstrs -> tab i ++ "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ tab i ++ "else \n" ++ stringOfInstrs elseInstrs where
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
                   EPatternMatching input cases -> tab i ++ "match " ++ show input ++ stringOfCases i cases
                   ETryCatch tryBody catchCases -> tab i ++ "try\n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") tryBody) ++ tab i ++ "catch\n" ++ stringOfCases i catchCases
+                  EDataDecl name _ tvars tcons -> tab i ++ "data " ++ name ++ " " ++ unwords (map show tvars) ++ " = " ++ intercalate " | " (map (\(TypeConstructor name' types) -> name' ++ unwords (map show types)) tcons)
+                  EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
+                  EExceptionDecl name types -> tab i ++ "exception " ++ name ++ unwords (map show types)
+                  ELetBinding name t args instrs -> tab i ++ "let " ++ name ++ " " ++ stringofNameds args ++ (case t of
+                                                                                                              Just t' -> " : " ++ show t'
+                                                                                                              Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
+                  EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
 
 instance Show Expr where
     showsPrec _ x = shows $ PP.text $ stringOfExpr x
 
 instance Show Pattern where
     show WildcardPattern = "_"
+    show (IdPattern name) = "'" ++ name ++ "'"
+    show (TuplePattern pattens) = "(" ++ intercalate "," (map show pattens) ++ ")"
+    show (TConPattern name pattens) = name ++ " " ++ show pattens
