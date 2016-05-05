@@ -17,6 +17,8 @@ library
   exposed-modules:     Ast
                      , Type
                      , TypeScope
+                     , Value
+                     , ValueScope
                      , State
                      , Infer
   build-depends:       base >= 4.7 && < 5

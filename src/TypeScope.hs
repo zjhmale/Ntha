@@ -3,14 +3,13 @@ module TypeScope where
 import Ast
 import Type
 import State
-import System.IO.Unsafe(unsafePerformIO)
 import Prelude hiding (lookup)
 import qualified Data.Map as M
 
-type Env = M.Map EName Type
+type TypeEnv = M.Map EName Type
 type ParentScope = TypeScope
 
-data TypeScope = TypeScope (Maybe ParentScope) Env
+data TypeScope = TypeScope (Maybe ParentScope) TypeEnv
 
 createEmptyScope :: TypeScope
 createEmptyScope = TypeScope Nothing M.empty
@@ -18,7 +17,7 @@ createEmptyScope = TypeScope Nothing M.empty
 createScopeWithParent :: ParentScope -> TypeScope
 createScopeWithParent parent = TypeScope (Just parent) M.empty
 
-createScope :: ParentScope -> Env -> TypeScope
+createScope :: ParentScope -> TypeEnv -> TypeScope
 createScope parent env = TypeScope (Just parent) env
 
 insert :: EName -> Type -> TypeScope -> TypeScope
