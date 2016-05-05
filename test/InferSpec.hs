@@ -6,6 +6,7 @@ import Infer
 import TypeScope
 import State (resetId, resetUniqueName)
 import Control.Monad (foldM)
+import Prologue
 import qualified Text.PrettyPrint as PP
 import qualified Data.Set as S
 import Test.Hspec

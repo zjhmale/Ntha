@@ -22,6 +22,7 @@ library
                      , State
                      , Infer
                      , Eval
+                     , Prologue
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , pretty
