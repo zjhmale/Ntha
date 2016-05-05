@@ -4,7 +4,10 @@ module Type where
 
 import State
 import Data.IORef
+import Data.List(intercalate)
 import qualified Data.Map as M
+import qualified Text.PrettyPrint as PP
+import System.IO.Unsafe(unsafePerformIO)
 
 type Id = Int
 type TName = String
@@ -48,8 +51,49 @@ unitT = TOper "()" []
 exceptionT :: Type
 exceptionT = TOper "Exception" []
 
+stringOfType :: Type -> Infer String
+stringOfType (TVar _ inst name) = do
+  instV <- readIORef inst
+  case instV of
+    Just inst' -> stringOfType inst'
+    Nothing -> return name
+stringOfType (TOper name args) = case name of
+                                  "*" -> do
+                                    argsStr <- (intercalate " * ") <$> mapM stringOfType args
+                                    return $ "(" ++ argsStr ++ ")"
+                                  "List" -> do
+                                    argStr <- stringOfType $ args!!0
+                                    return $ "[" ++ argStr ++ "]"
+                                  "→" -> do
+                                    let argT = args!!0
+                                    let rtnT = args!!1
+                                    argStr <- stringOfType argT
+                                    rtnStr <- stringOfType rtnT
+                                    let adjust t s = case t of
+                                                      TOper "→" _ -> "(" ++ s ++ ")"
+                                                      _ -> s
+                                    let argStr' = adjust argT argStr
+                                    let rtnStr' = adjust rtnT rtnStr
+                                    return $ argStr' ++ " → " ++ rtnStr'
+                                  _ -> if (length args) == 0
+                                      then return name
+                                      else do
+                                        argsStr <- unwords <$> mapM stringOfType args
+                                        return $ "(" ++ name ++ ":" ++ argsStr ++ ")"
+stringOfType (TRecord pairs) = do
+  pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> (k ++) <$> stringOfType v) $ M.toList pairs)
+  return $ "{" ++ pairsStr ++ "}"
+stringOfType (TCon name types dataType) = do
+  typesStr <- (intercalate ", ") <$> mapM stringOfType types
+  dataTypeStr <- stringOfType dataType
+  return $ "(" ++ name ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
+stringOfType (TExceptionCon name types) = do
+  typesStr <- (intercalate ", ") <$> mapM stringOfType types
+  exceptStr <- stringOfType exceptionT
+  return $ name ++ " " ++ typesStr ++ " ⇒ " ++ exceptStr
+
 instance Show Type where
-  show (TVar _ _ name) = name
+    showsPrec _ x = shows $ PP.text $ unsafePerformIO $ stringOfType x
 
 instance Eq Type where
   TVar id1 inst1 vname1 == TVar id2 inst2 vname2 = id1 == id2 && instV1 == instV2 && vname1 == vname2 where
