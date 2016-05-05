@@ -1,0 +1,23 @@
+language: haskell
+
+sudo: false
+
+cache:
+  directories:
+  - $HOME/.stack
+
+before_install:
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+- export PATH=/opt/ghc/7.10.2/bin:$PATH
+
+addons:
+  apt:
+    sources:
+    - hvr-ghc
+    packages:
+    - ghc-7.10.2
+
+script:
+  - stack --no-terminal --skip-ghc-check test
