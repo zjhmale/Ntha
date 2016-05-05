@@ -11,7 +11,7 @@ createState = unsafePerformIO . newIORef
 readState :: IORef a -> a
 readState = unsafePerformIO . readIORef
 
-type Infer a  = IO a
+type Infer a = IO a
 
 currentId :: IORef Int
 currentId = createState 0

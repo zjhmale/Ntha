@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
+
 module Value where
 
 import Ast
