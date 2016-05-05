@@ -39,3 +39,7 @@ instance Show TypeScope where
   show (TypeScope parent env) = (show . M.toList) env ++ case parent of
                                               Just p -> " -> " ++ show p
                                               Nothing -> " -| "
+
+assumptions :: Infer TypeScope
+assumptions = do
+  return $ TypeScope Nothing $ M.fromList [("+", functionT [intT, intT] intT)]
