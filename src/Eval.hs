@@ -4,6 +4,7 @@ module Eval where
 
 import Ast
 import Value
+import Data.Maybe (fromMaybe)
 import Prelude hiding (lookup)
 import qualified Data.Map as M
 
@@ -12,6 +13,25 @@ makeList :: [Value] -> Value
 makeList res = case res of
                 [] -> nil
                 x:xs -> cons x $ makeList xs
+
+evalFn :: Value -> Value -> ValueScope -> Value
+evalFn (Fn f) arg scope = f arg scope
+evalFn _ _ _ = VUnit
+
+chainingFn :: EName -> Value -> Value
+chainingFn argName next = Fn (\oarg _ -> Fn (\arg scope -> let margs = case oarg of
+                                                                        FnApArgs pairs -> let v = fromMaybe VUnit $ M.lookup "*" pairs
+                                                                                         in FnApArgs $ M.insert "*" arg $ M.insert argName v pairs
+                                                                        _ -> FnApArgs $ M.fromList [(argName, oarg), ("*", arg)]
+                                                         in evalFn next margs scope))
+
+chaininLastFn :: EName -> [Expr] -> Value
+chaininLastFn argName body = Fn (\arg scope -> let scope' = case arg of
+                                                            FnApArgs pairs -> foldl (\env (k, v) -> insert k v env)
+                                                                                   scope
+                                                                                   (M.toList $ M.insert argName (fromMaybe VUnit $ M.lookup "*" pairs) pairs)
+                                                            _ -> insert argName arg scope
+                                              in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
 
 eval :: Expr -> ValueScope -> (ValueScope, Value)
 eval expr scope = case expr of

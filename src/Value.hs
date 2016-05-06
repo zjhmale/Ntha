@@ -52,6 +52,7 @@ data Value = VNum Int
            | Adt Tag [Value]
            | ExceptionAdt Tag [Value]
            | Fn (Value -> ValueScope -> Value) -- or closure
+           | FnApArgs (M.Map String Value)
 
 nil :: Value
 nil = Adt "Nil" []
