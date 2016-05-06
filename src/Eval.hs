@@ -108,3 +108,13 @@ eval expr scope = case expr of
                                                   lastFn = chaininLastFn name instrs
                                                   fnChain = foldl (\fn (Named n _) -> chainingFn n fn) lastFn xs
                                                 _ -> (scope, VUnit)
+                    EApp fn arg -> case fnV of
+                                    Fn f -> let (_, argV) = eval arg scope'
+                                           in (scope, f argV scope')
+                                    Adt _ _ -> case eval arg scope' of
+                                                (_, VUnit) -> (scope, fnV)
+                                                _ -> error $ "Error while evaluating " ++ show expr ++ ": " ++ show fnV ++ " constructor doesn't take arguments"
+                                    _ -> error $ "Error while evaluating " ++ show expr ++ ": " ++ show fnV ++ " is not a function"
+                      where
+                      scope' = child scope
+                      (_, fnV) = eval fn scope'
