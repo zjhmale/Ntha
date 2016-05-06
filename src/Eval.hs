@@ -103,4 +103,8 @@ eval expr scope = case expr of
                     ETuple values -> (scope, VTuple $ map (\v -> snd (eval v scope)) values)
                     EList values -> (scope, makeList $ map (\v -> snd (eval v scope)) values)
                     ERecord pairs -> (scope, VRecord $ M.map (\v -> snd (eval v scope)) pairs)
-                    ELambda params _ instrs -> undefined
+                    ELambda params _ instrs -> case reverse params of
+                                                (Named name _):xs -> (scope, envCapturingFnWrapper fnChain expr scope) where
+                                                  lastFn = chaininLastFn name instrs
+                                                  fnChain = foldl (\fn (Named n _) -> chainingFn n fn) lastFn xs
+                                                _ -> (scope, VUnit)
