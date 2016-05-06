@@ -7,6 +7,9 @@ import Value
 import Data.Maybe (fromMaybe)
 import Prelude hiding (lookup)
 import qualified Data.Map as M
+import qualified Data.Set as S
+
+type Exclude = S.Set EName
 
 -- a little non-sense here, maybe should just use VList
 makeList :: [Value] -> Value
@@ -32,6 +35,53 @@ chaininLastFn argName body = Fn (\arg scope -> let scope' = case arg of
                                                                                    (M.toList $ M.insert argName (fromMaybe VUnit $ M.lookup "*" pairs) pairs)
                                                             _ -> insert argName arg scope
                                               in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
+
+excludePatternBoundNames :: Pattern -> Exclude -> Exclude
+excludePatternBoundNames pat excluded = case pat of
+                                          IdPattern name -> S.insert name excluded
+                                          TuplePattern pats -> foldl (\exc p -> excludePatternBoundNames p exc) excluded pats
+                                          TConPattern _ pats -> foldl (\exc p -> excludePatternBoundNames p exc) excluded pats
+                                          _ -> excluded
+
+visit :: Expr -> ValueScope -> ValueEnv -> Exclude -> (ValueScope, ValueEnv, Exclude)
+visit expr scope capturedEnv excluded = case expr of
+                                          EList values -> foldl (\(s, c, e) value -> visit value s c e)
+                                                               (scope, capturedEnv, excluded) values
+                                          EIf cond thenInstrs elseInstrs -> (sco'', env'', exc'') where
+                                            (sco, env, exc) = visit cond scope capturedEnv excluded
+                                            (sco', env', exc') = foldl (\(s, c, e) value -> visit value s c e)
+                                                                       (sco, env, exc) thenInstrs
+                                            (sco'', env'', exc'') = foldl (\(s, c, e) value -> visit value s c e)
+                                                                          (sco', env', exc') elseInstrs
+                                          EVar name -> if name `elem` excluded
+                                                      then let (scope', val) = eval expr scope
+                                                           in (scope', M.insert name val capturedEnv, excluded)
+                                                      else (scope, capturedEnv, excluded)
+                                          EApp fn arg -> let (s, c, e) = visit fn scope capturedEnv excluded
+                                                        in visit arg s c e
+                                          EDestructLetBinding main _ _ -> (scope, capturedEnv, excludePatternBoundNames main excluded)
+                                          EPatternMatching input cases -> let (scope', capturedEnv', excluded') = visit input scope capturedEnv excluded
+                                                                         in foldl (\(s, c, e) (Case pat outcomes) -> let e' = excludePatternBoundNames pat e
+                                                                                                                    in foldl (\(sco, env, exc) instr -> visit instr sco env exc)
+                                                                                                                             (s, c, e') outcomes)
+                                                                                  (scope', capturedEnv', excluded') cases
+                                          _ -> error $ "Unhandled expr " ++ show expr
+
+
+envCapturingFnWrapper :: Value -> Expr -> ValueScope -> Value
+envCapturingFnWrapper fn (ELambda params _ instrs) scope = Fn (\arg scope' -> let scope'' = foldl (\env (k, v) -> insert k v env)
+                                                                                                 scope' $ M.toList capturedEnv
+                                                                            in evalFn fn arg scope'') where
+  excluded = foldl (\exc (Named name _) -> S.insert name exc) S.empty params
+  (_, capturedEnv, _) = foldl (\(s, c, e) instr -> visit instr s c e)
+                        (scope, M.empty, excluded) instrs
+envCapturingFnWrapper fn (EDestructLetBinding (IdPattern name) args instrs) scope = Fn (\arg scope' -> let scope'' = foldl (\env (k, v) -> insert k v env)
+                                                                                                                          scope' $ M.toList capturedEnv
+                                                                                                                    in evalFn fn arg scope'') where
+  excluded = foldl (\exc pat -> excludePatternBoundNames pat exc) (S.singleton name) args
+  (_, capturedEnv, _) = foldl (\(s, c, e) instr -> visit instr s c e)
+                        (scope, M.empty, excluded) instrs
+envCapturingFnWrapper _ _ _ = VUnit
 
 eval :: Expr -> ValueScope -> (ValueScope, Value)
 eval expr scope = case expr of
