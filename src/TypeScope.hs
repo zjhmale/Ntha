@@ -4,7 +4,6 @@ module TypeScope where
 
 import Ast
 import Type
-import State
 import Prelude hiding (lookup)
 import qualified Data.Map as M
 
