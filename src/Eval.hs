@@ -69,19 +69,21 @@ visit expr scope capturedEnv excluded = case expr of
 
 
 envCapturingFnWrapper :: Value -> Expr -> ValueScope -> Value
-envCapturingFnWrapper fn (ELambda params _ instrs) scope = Fn (\arg scope' -> let scope'' = foldl (\env (k, v) -> insert k v env)
-                                                                                                 scope' $ M.toList capturedEnv
-                                                                            in evalFn fn arg scope'') where
-  excluded = foldl (\exc (Named name _) -> S.insert name exc) S.empty params
-  (_, capturedEnv, _) = foldl (\(s, c, e) instr -> visit instr s c e)
-                        (scope, M.empty, excluded) instrs
-envCapturingFnWrapper fn (EDestructLetBinding (IdPattern name) args instrs) scope = Fn (\arg scope' -> let scope'' = foldl (\env (k, v) -> insert k v env)
-                                                                                                                          scope' $ M.toList capturedEnv
-                                                                                                                    in evalFn fn arg scope'') where
-  excluded = foldl (\exc pat -> excludePatternBoundNames pat exc) (S.singleton name) args
-  (_, capturedEnv, _) = foldl (\(s, c, e) instr -> visit instr s c e)
-                        (scope, M.empty, excluded) instrs
-envCapturingFnWrapper _ _ _ = VUnit
+envCapturingFnWrapper fn expr scope = case expr of
+                                        (ELambda params _ instrs) -> mkFn capturedEnv where
+                                          excluded = foldl (\exc (Named name _) -> S.insert name exc) S.empty params
+                                          capturedEnv = mkCapturedEnv excluded instrs
+                                        (EDestructLetBinding (IdPattern name) args instrs) -> mkFn capturedEnv where
+                                          excluded = foldl (\exc pat -> excludePatternBoundNames pat exc) (S.singleton name) args
+                                          capturedEnv = mkCapturedEnv excluded instrs
+                                        _ -> VUnit
+                                      where
+                                      mkCapturedEnv excluded instrs = let (_, capturedEnv, _) =  foldl (\(s, c, e) instr -> visit instr s c e)
+                                                                                                       (scope, M.empty, excluded) instrs
+                                                                      in capturedEnv
+                                      mkFn capturedEnv = Fn (\arg scope' -> let scope'' = foldl (\env (k, v) -> insert k v env)
+                                                                                               scope' $ M.toList capturedEnv
+                                                                           in evalFn fn arg scope'')
 
 eval :: Expr -> ValueScope -> (ValueScope, Value)
 eval expr scope = case expr of
