@@ -118,3 +118,12 @@ eval expr scope = case expr of
                       where
                       scope' = child scope
                       (_, fnV) = eval fn scope'
+                    EIf cond thenInstrs elseInstrs -> let (_, condV) = eval cond scope
+                                                     in case condV of
+                                                          VBool v -> if v
+                                                                    then evalInstrs thenInstrs
+                                                                    else evalInstrs elseInstrs
+                                                                    where
+                                                                    evalInstrs instrs = let scope' = child scope
+                                                                                        in foldl (\(env, val) instr -> eval instr env) (scope', VUnit) instrs
+                                                          _ -> error $ "Error while evaluating " ++ show expr ++ ": the condition is not a boolean"
