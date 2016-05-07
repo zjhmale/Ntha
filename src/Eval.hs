@@ -145,9 +145,18 @@ eval expr scope = case expr of
                     EIf cond thenInstrs elseInstrs -> let (_, condV) = eval cond scope
                                                      in case condV of
                                                           VBool v -> if v
-                                                                    then evalInstrs thenInstrs
-                                                                    else evalInstrs elseInstrs
+                                                                    then (scope, evalInstrs thenInstrs)
+                                                                    else (scope, evalInstrs elseInstrs)
                                                                     where
                                                                     evalInstrs instrs = let scope' = child scope
-                                                                                        in foldl (\(env, val) instr -> eval instr env) (scope', VUnit) instrs
+                                                                                        in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) instrs
                                                           _ -> error $ "Error while evaluating " ++ show expr ++ ": the condition is not a boolean"
+                    EPatternMatching input cases -> findPattern inputV cases
+                      where (_, inputV) = eval input scope
+                            findPattern :: Value -> [Case] -> (ValueScope, Value)
+                            findPattern val [] = error $ "Match exception: " ++ show input ++ " = " ++ show val ++ " didn't match any case of " ++ show expr
+                            findPattern val ((Case pat instrs):cs) = let (scope', isMatch) = match val pat $ child scope
+                                                                     in if isMatch
+                                                                        then (scope, snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) instrs)
+                                                                        else findPattern val cs
+
