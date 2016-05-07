@@ -50,7 +50,6 @@ data Value = VNum Int
            | VRecord (M.Map EField Value)
            | VUnit
            | Adt Tag [Value]
-           | ExceptionAdt Tag [Value]
            | Fn (Value -> ValueScope -> Value) -- or closure
            | FnApArgs (M.Map String Value)
 

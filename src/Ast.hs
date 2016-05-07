@@ -24,14 +24,10 @@ data Expr = EVar EName
           | EUnit
           | ELambda [Named] (Maybe Type) [Expr]
           | EApp Expr Expr
-          | ETryCatch [Expr] [Case]
-          | EThrow Expr
           | EIf Expr [Expr] [Expr]
           | EPatternMatching Expr [Case]
-          | ELetBinding EName (Maybe Type) [Named] [Expr]
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
-          | EExceptionDecl EName [Type]
           | EProgram [Expr]
 
 data TypeConstructor = TypeConstructor EName [Type]
@@ -62,12 +58,8 @@ stringOfExpr e = case e of
                   ELambda params annoT body -> "λ" ++ stringofNameds params ++ (case annoT of
                                                                                 Just annoT' -> " : " ++ show annoT'
                                                                                 Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") body)
-                  EThrow _ -> reprOfExpr 0 e
                   EIf cond thenInstrs elseInstrs -> "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ "else \n" ++ stringOfInstrs elseInstrs where
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ show instr ++ "\n") instrs
-                  ELetBinding name t args instrs -> "let " ++ name ++ " " ++ stringofNameds args ++ (case t of
-                                                                                                      Just t' -> " : " ++ show t'
-                                                                                                      Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") instrs)
                   EProgram instrs -> intercalate "" $ map (\instr -> show instr ++ "\n") instrs
                   _ -> reprOfExpr 0 e
 
@@ -93,19 +85,13 @@ reprOfExpr i e = case e of
                   ELambda params annoT body -> tab i ++ "λ" ++ stringofNameds params ++ (case annoT of
                                                                                          Just annoT' -> " : " ++ show annoT'
                                                                                          Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
-                  EThrow exception -> tab i ++ "throw " ++ reprOfExpr 0 exception
                   EIf cond thenInstrs elseInstrs -> tab i ++ "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ tab i ++ "else \n" ++ stringOfInstrs elseInstrs where
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
                   EPatternMatching input cases -> tab i ++ "match " ++ show input ++ stringOfCases i cases
-                  ETryCatch tryBody catchCases -> tab i ++ "try\n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") tryBody) ++ tab i ++ "catch\n" ++ stringOfCases i catchCases
                   EDataDecl name _ tvars tcons -> tab i ++ "data " ++ name ++ " " ++ unwords (map show tvars) ++ " = " ++ intercalate " | " (map (\(TypeConstructor name' types) -> name' ++ case types of
                                                                                                                                                                                             [] -> ""
                                                                                                                                                                                             _ -> " " ++ unwords (map show types)) tcons)
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
-                  EExceptionDecl name types -> tab i ++ "exception " ++ name ++ unwords (map show types)
-                  ELetBinding name t args instrs -> tab i ++ "let " ++ name ++ " " ++ stringofNameds args ++ (case t of
-                                                                                                              Just t' -> " : " ++ show t'
-                                                                                                              Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
 
 instance Show Expr where

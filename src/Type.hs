@@ -19,7 +19,6 @@ data Type = TVar Id (IORef TInstance) TName -- type variable
           | TOper TName Types -- type operator
           | TRecord (M.Map TField Type)
           | TCon TName Types Type
-          | TExceptionCon TName Types
 
 intT :: Type
 intT = TOper "Number" []
@@ -47,9 +46,6 @@ strT = listT charT
 
 unitT :: Type
 unitT = TOper "()" []
-
-exceptionT :: Type
-exceptionT = TOper "Exception" []
 
 stringOfType :: Type -> Infer String
 stringOfType (TVar _ inst name) = do
@@ -90,10 +86,6 @@ stringOfType (TCon name types dataType) = do
     _ -> do
       typesStr <- (intercalate ", ") <$> mapM stringOfType types
       return $ "(" ++ name ++ " " ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
-stringOfType (TExceptionCon name types) = do
-  typesStr <- (intercalate ", ") <$> mapM stringOfType types
-  exceptStr <- stringOfType exceptionT
-  return $ name ++ " " ++ typesStr ++ " ⇒ " ++ exceptStr
 
 instance Show Type where
     showsPrec _ x = shows $ PP.text $ unsafePerformIO $ stringOfType x
@@ -105,7 +97,6 @@ instance Eq Type where
   TOper name1 args1 == TOper name2 args2 = name1 == name2 && args1 == args2
   TRecord pairs1 == TRecord pairs2 = pairs1 == pairs2
   TCon name1 types1 dataType1 == TCon name2 types2 dataType2 = name1 == name2 && types1 == types2 && dataType1 == dataType2
-  TExceptionCon name1 types1 == TExceptionCon name2 types2 = name1 == name2 && types1 == types2
   _ == _ = False
 
 instance Ord Type where
@@ -115,7 +106,6 @@ instance Ord Type where
     TOper name1 args1 <= TOper name2 args2 = name1 <= name2 && args1 <= args2
     TRecord pairs1 <= TRecord pairs2 = pairs1 <= pairs2
     TCon name1 types1 dataType1 <= TCon name2 types2 dataType2 = name1 <= name2 && types1 <= types2 && dataType1 <= dataType2
-    TExceptionCon name1 types1 <= TExceptionCon name2 types2 = name1 <= name2 && types1 <= types2
     _ <= _ = False
 
 makeVariable :: Infer Type

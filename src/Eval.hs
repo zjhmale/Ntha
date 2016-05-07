@@ -99,9 +99,6 @@ match input pattern scope = case pattern of
                                                         Adt tag args -> if name == tag && length pats == length args
                                                                        then isAllMatch args pats
                                                                        else (scope, False)
-                                                        ExceptionAdt tag args -> if name == tag && length pats == length args
-                                                                                then isAllMatch args pats
-                                                                                else (scope, False)
                                                         _ -> (scope, False)
                               where
                               isAllMatch items pats = let (scope', isMatchs) = foldl (\(env, matchs) (item, pat) -> let (env', isMatch) = match item pat env

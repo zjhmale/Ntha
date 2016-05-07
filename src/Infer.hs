@@ -70,8 +70,7 @@ fresh t nonGeneric = do
                                                                     fv <- freshrec v
                                                                     return $ M.insert k fv acc)
                                                                    M.empty $ M.toList valueTypes
-                                            return $ TRecord newValueTypes
-                                          TExceptionCon _ _ -> return tyP)
+                                            return $ TRecord newValueTypes)
   freshrec t
 
 getType :: TName -> TypeScope -> NonGeneric -> Infer Type
@@ -82,7 +81,6 @@ getType name scope nonGeneric = case lookup name scope of
 adjustType :: Type -> Type
 adjustType t = case t of
                 TCon _ types dataType -> functionT types dataType
-                TExceptionCon _ types -> functionT types exceptionT
                 _ -> t
 
 unify :: Type -> Type -> Infer ()
@@ -106,11 +104,6 @@ unify t1 t2 = do
                                                           Nothing -> error $ "Cannot unify, no field " ++ k ++ " " ++ show a ++ ", " ++ show b)
                                                       $ M.toList types2
     _ -> error $ "Can not unify " ++ show t1 ++ ", " ++ show t2
-
-isNotException :: Type -> Infer Bool
-isNotException t = do
-  tP <- prune t
-  return $ tP /= exceptionT
 
 visitPattern :: Pattern -> TypeScope -> NonGeneric -> Infer (TypeScope, NonGeneric, Type)
 visitPattern pattern scope nonGeneric = case pattern of
@@ -141,12 +134,6 @@ visitPattern pattern scope nonGeneric = case pattern of
                                                               else do
                                                                 zipWithM_ unify patTypes types
                                                                 return (newScope, newNonGeneric, dataType)
-                                                            TExceptionCon _ types -> do
-                                                              if (length patterns) /= (length types)
-                                                              then error $ "Bad arity: case " ++ show pattern ++ " provided " ++ (show . length) patterns ++ " arguments whereas " ++ name ++ " takes " ++ (show . length) types
-                                                              else do
-                                                                zipWithM_ unify patTypes types
-                                                                return (newScope, newNonGeneric, exceptionT)
                                                             _ -> error $ "Invalid type constructor " ++ name
 
 definePattern :: Pattern -> Type -> TypeScope -> Infer TypeScope
@@ -227,36 +214,13 @@ analyze term scope nonGeneric = case term of
                                     return (scope, fieldT)
                                   EIf cond thenInstructions elseInstructions -> do
                                     (_, condT) <- analyze cond scope nonGeneric
-                                    whenM (isNotException condT) $ unify condT boolT
+                                    unify condT boolT
                                     (newScope, thenT) <- foldM (\(env, _) instr -> analyze instr env nonGeneric)
                                                                (scope, unitT) thenInstructions
                                     (newScope', elseT) <- foldM (\(env, _) instr -> analyze instr env nonGeneric)
                                                                (newScope, unitT) elseInstructions
-                                    isThenNotExcept <- isNotException thenT
-                                    isElseNotExcept <- isNotException elseT
-                                    when (isThenNotExcept && isElseNotExcept) $ unify thenT elseT
-                                    isThenNotExcept' <- isNotException thenT
-                                    if isThenNotExcept'
-                                    then return (newScope', thenT)
-                                    else return (newScope', elseT)
-                                  ELetBinding name annoT params instructions -> do
-                                    letTV <- makeVariable
-                                    -- maybe a little non-sense here just to avoid a function can not be polymorphic to itself
-                                    let newScope = insert name letTV $ child scope
-                                    let newNonGeneric = S.insert letTV nonGeneric
-                                    (paramTypes, newScope', newNonGeneric') <- foldM (\(types', env', nonGeneric') (Named name' t) ->
-                                                                                     case t of
-                                                                                       Just t' -> return (types' ++ [t'], insert name' t' env', S.insert t' nonGeneric')
-                                                                                       Nothing -> do
-                                                                                         t' <- makeVariable
-                                                                                         return (types' ++ [t'], insert name' t' env', S.insert t' nonGeneric'))
-                                                                                     ([], newScope, newNonGeneric) params
-                                    rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric') unitT instructions
-                                    case annoT of
-                                      Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
-                                      Nothing -> return ()
-                                    let letT = functionT paramTypes rtnT
-                                    return (insert name letT scope, letT)
+                                    unify thenT elseT
+                                    return (newScope', thenT)
                                   EDestructLetBinding main args instructions -> do
                                     let newScope = child scope
                                     (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric
@@ -274,58 +238,18 @@ analyze term scope nonGeneric = case term of
                                                           insert conName (TCon conName conTypes t) env)
                                                          scope tconstructors
                                     return (newScope, t)
-                                  EExceptionDecl name types -> do
-                                    let newScope = insert name (TExceptionCon name types) scope
-                                    return (newScope, exceptionT)
-                                  EThrow exception -> do
-                                    (_, exT) <- analyze exception scope nonGeneric
-                                    unify exT exceptionT -- a little non-sense here
-                                    return (scope, exceptionT)
                                   EPatternMatching input cases -> do
                                     (_, inputT) <- analyze input scope nonGeneric
                                     resT <- makeVariable
-                                    (resT', allExceptions) <- foldM (\(rt, allExcept) (Case pat outcomes) -> do
-                                                                      let newScope = child scope
-                                                                      (newScope', newNonGeneric, patT) <- visitPattern pat newScope nonGeneric
-                                                                      whenM (isNotException inputT) $ unify patT inputT
-                                                                      (_, caseT) <- foldM (\(env, _) outcome -> analyze outcome env newNonGeneric)
-                                                                                          (newScope', unitT) outcomes
-                                                                      isCaseNotException <- isNotException caseT
-                                                                      if isCaseNotException
-                                                                      then do
-                                                                        unify caseT rt
-                                                                        return (rt, False)
-                                                                      else return (rt, allExcept))
-                                                                    (resT, True) cases
-                                    if allExceptions
-                                    then return (scope, exceptionT)
-                                    else return (scope, resT')
-                                  ETryCatch tryBody catchCases -> do
-                                    (_, tryT) <- foldM (\(env, _) instr -> analyze instr env nonGeneric)
-                                                      (scope, unitT) tryBody
-                                    tryTP <- prune tryT
-                                    resT <- makeVariable
-                                    whenM (isNotException tryTP) $ unify tryTP resT
                                     resT' <- foldM (\rt (Case pat outcomes) -> do
-                                                    let newScope = child scope
-                                                    (_, _, patT) <- visitPattern pat newScope nonGeneric
-                                                    unify patT exceptionT
-                                                    (_, caseT) <- foldM (\(env, _) outcome -> analyze outcome env nonGeneric)
-                                                                        (newScope, unitT) outcomes
-                                                    unify caseT rt
-                                                    return rt)
-                                             resT catchCases
+                                                     let newScope = child scope
+                                                     (newScope', newNonGeneric, patT) <- visitPattern pat newScope nonGeneric
+                                                     unify patT inputT
+                                                     (_, caseT) <- foldM (\(env, _) outcome -> analyze outcome env newNonGeneric)
+                                                                         (newScope', unitT) outcomes
+                                                     unify caseT rt
+                                                     return rt)
+                                                   resT cases
                                     return (scope, resT')
                                   EProgram instructions -> do
-                                    -- pre define procedure
-                                    newScope <- foldM (\env instr -> do
-                                                        case instr of
-                                                          ELetBinding name _ params _ -> if (length params) > 0
-                                                                                        then do
-                                                                                           tvarA <- makeVariable
-                                                                                           tvarB <- makeVariable
-                                                                                           return $ insert name (functionT [tvarA] tvarB) env
-                                                                                        else return env
-                                                          _ -> return env)
-                                                      scope instructions
-                                    foldM (\(env, _) instr -> analyze instr env nonGeneric) (newScope, unitT) instructions
+                                    foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions
