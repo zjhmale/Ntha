@@ -44,11 +44,24 @@ destrChainingFn pat next = Fn (\oarg _ -> Fn (\arg scope -> let margs = case oar
 
 destrChaininLastFn :: Pattern -> [Expr] -> Value
 destrChaininLastFn pat body = Fn (\arg scope -> let scope' = case arg of
-                                                              DestrFnApArgs args freeVal -> let s = foldl (\env (PatVal pat val) -> define pat val env)
+                                                              DestrFnApArgs args freeVal -> let s = foldl (\env (PatVal pat' val) -> define pat' val env)
                                                                                                          scope args
                                                                                            in define pat freeVal s
                                                               _ -> define pat arg scope
                                                in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
+
+tConChainingFn :: Tag -> Value -> Value
+tConChainingFn tag next = Fn (\oarg _ -> Fn (\arg scope -> let targs = case oarg of
+                                                                       TConArgs args tag' -> TConArgs (args ++ [arg]) tag'
+                                                                       _ -> TConArgs [oarg, arg] tag
+                                                         in evalFn next targs scope))
+
+tConChaininLastFn :: Tag -> Value
+tConChaininLastFn tag = Fn (\arg _ -> let args = case arg of
+                                                  TConArgs args' _ -> args'
+                                                  VUnit -> []
+                                                  _ -> [arg]
+                                     in Adt tag args)
 
 excludePatternBoundNames :: Pattern -> Exclude -> Exclude
 excludePatternBoundNames pat excluded = case pat of
@@ -200,3 +213,15 @@ eval expr scope = case expr of
                                                                                    in let fn = envCapturingFnWrapper fnV expr scope
                                                                                       in (insert name fn scope, fn)
                                                                   _ -> error $ "Function name can only be a name, whereas a pattern " ++ show main ++ " was provided in " ++ show expr
+                    EDataDecl _ _ _ typeConstructors -> let scope' = foldl makeChain scope typeConstructors
+                                                       in (scope', VUnit)
+                      where
+                      makeChain env (TypeConstructor name types) = let fnV = case reverse types of
+                                                                               _:ts -> fnChain where
+                                                                                 lastFn = tConChaininLastFn name
+                                                                                 fnChain = foldl (\fn _ -> tConChainingFn name fn)
+                                                                                                 lastFn ts
+                                                                               _ -> VUnit
+                                                                   in if fnV == VUnit
+                                                                      then insert name (Adt name []) env
+                                                                      else insert name fnV env

@@ -53,6 +53,7 @@ data Value = VNum Int
            | Fn (Value -> ValueScope -> Value) -- or closure
            | FnApArgs (M.Map String Value)
            | DestrFnApArgs [PatVal] FreeVal
+           | TConArgs [Value] Tag
 
 data PatVal = PatVal Pattern Value
 
@@ -68,3 +69,6 @@ binFn f = Fn (\arg1 _ -> Fn (\arg2 _ -> f arg1 arg2))
 
 instance Show Value where
   show (VNum i) = show i
+
+instance Eq Value where
+  VNum int1 == VNum int2 = int1 == int2
