@@ -26,7 +26,6 @@ library
                      , containers
                      , pretty
                      , monad-loops
-                     , IfElse
   default-language:    Haskell2010
 
 executable ntha-exe

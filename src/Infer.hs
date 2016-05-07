@@ -10,7 +10,6 @@ import State
 import Data.IORef
 import Control.Monad (when, zipWithM_, foldM, forM_)
 import Control.Monad.Loops (anyM)
-import Control.Monad.IfElse (whenM)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Prelude hiding (lookup)
