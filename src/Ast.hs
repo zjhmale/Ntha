@@ -38,6 +38,7 @@ data Pattern = WildcardPattern
              | IdPattern EName
              | TuplePattern [Pattern]
              | TConPattern EName [Pattern]
+             deriving (Eq)
 
 data Case = Case Pattern [Expr]
 

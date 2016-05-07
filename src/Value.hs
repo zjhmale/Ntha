@@ -56,6 +56,7 @@ data Value = VNum Int
            | TConArgs [Value] Tag
 
 data PatVal = PatVal Pattern Value
+              deriving (Eq)
 
 nil :: Value
 nil = Adt "Nil" []
@@ -72,3 +73,13 @@ instance Show Value where
 
 instance Eq Value where
   VNum int1 == VNum int2 = int1 == int2
+  VChar char1 == VChar char2 = char1 == char2
+  VBool bool1 == VBool bool2 = bool1 == bool2
+  VTuple values1 == VTuple values2 = values1 == values2
+  VRecord pairs1 == VRecord pairs2 = pairs1 == pairs2
+  VUnit == VUnit = True
+  Adt tag1 values1 == Adt tag2 values2 = tag1 == tag2 && values1 == values2
+  FnApArgs pairs1 == FnApArgs pairs2 = pairs1 == pairs2
+  DestrFnApArgs vals1 val1 == DestrFnApArgs vals2 val2 = vals1 == vals2 && val1 == val2
+  TConArgs vals1 tag1 == TConArgs vals2 tag2 = vals1 == vals2 && tag1 == tag2
+  _ == _ = False
