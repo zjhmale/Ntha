@@ -85,6 +85,30 @@ envCapturingFnWrapper fn expr scope = case expr of
                                                                                                scope' $ M.toList capturedEnv
                                                                            in evalFn fn arg scope'')
 
+-- to predicate if a value is match specific pattern
+match :: Value -> Pattern -> ValueScope -> (ValueScope, Bool)
+match input pattern scope = case pattern of
+                              WildcardPattern -> (scope, True)
+                              IdPattern name -> (insert name input scope, True)
+                              TuplePattern pats -> case input of
+                                                    VTuple items -> if length items /= length pats
+                                                                   then (scope, False)
+                                                                   else isAllMatch items pats
+                                                    _ -> (scope, False)
+                              TConPattern name pats -> case input of
+                                                        Adt tag args -> if name == tag && length pats == length args
+                                                                       then isAllMatch args pats
+                                                                       else (scope, False)
+                                                        ExceptionAdt tag args -> if name == tag && length pats == length args
+                                                                                then isAllMatch args pats
+                                                                                else (scope, False)
+                                                        _ -> (scope, False)
+                              where
+                              isAllMatch items pats = let (scope', isMatchs) = foldl (\(env, matchs) (item, pat) -> let (env', isMatch) = match item pat env
+                                                                                                                   in (env', matchs ++ [isMatch]))
+                                                                                     (scope, []) $ zip items pats
+                                                      in (scope', all id isMatchs)
+
 eval :: Expr -> ValueScope -> (ValueScope, Value)
 eval expr scope = case expr of
                     ENum v -> (scope, VNum v)
