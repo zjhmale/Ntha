@@ -23,18 +23,32 @@ evalFn _ _ _ = VUnit
 
 chainingFn :: EName -> Value -> Value
 chainingFn argName next = Fn (\oarg _ -> Fn (\arg scope -> let margs = case oarg of
-                                                                        FnApArgs pairs -> let v = fromMaybe VUnit $ M.lookup "*" pairs
-                                                                                         in FnApArgs $ M.insert "*" arg $ M.insert argName v pairs
-                                                                        _ -> FnApArgs $ M.fromList [(argName, oarg), ("*", arg)]
+                                                                       FnApArgs pairs -> let v = fromMaybe VUnit $ M.lookup "*" pairs
+                                                                                        in FnApArgs $ M.insert "*" arg $ M.insert argName v pairs
+                                                                       _ -> FnApArgs $ M.fromList [(argName, oarg), ("*", arg)]
                                                          in evalFn next margs scope))
 
 chaininLastFn :: EName -> [Expr] -> Value
 chaininLastFn argName body = Fn (\arg scope -> let scope' = case arg of
-                                                            FnApArgs pairs -> foldl (\env (k, v) -> insert k v env)
-                                                                                   scope
-                                                                                   (M.toList $ M.insert argName (fromMaybe VUnit $ M.lookup "*" pairs) pairs)
-                                                            _ -> insert argName arg scope
+                                                             FnApArgs pairs -> foldl (\env (k, v) -> insert k v env)
+                                                                                    scope
+                                                                                    (M.toList $ M.insert argName (fromMaybe VUnit $ M.lookup "*" pairs) pairs)
+                                                             _ -> insert argName arg scope
                                               in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
+
+destrChainingFn :: Pattern -> Value -> Value
+destrChainingFn pat next = Fn (\oarg _ -> Fn (\arg scope -> let margs = case oarg of
+                                                                        DestrFnApArgs args freeVal -> DestrFnApArgs (args ++ [PatVal pat freeVal]) arg
+                                                                        _ -> DestrFnApArgs [PatVal pat oarg] arg
+                                                          in evalFn next margs scope))
+
+destrChaininLastFn :: Pattern -> [Expr] -> Value
+destrChaininLastFn pat body = Fn (\arg scope -> let scope' = case arg of
+                                                              DestrFnApArgs args freeVal -> let s = foldl (\env (PatVal pat val) -> define pat val env)
+                                                                                                         scope args
+                                                                                           in define pat freeVal s
+                                                              _ -> define pat arg scope
+                                               in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
 
 excludePatternBoundNames :: Pattern -> Exclude -> Exclude
 excludePatternBoundNames pat excluded = case pat of
@@ -106,6 +120,21 @@ match input pattern scope = case pattern of
                                                                                      (scope, []) $ zip items pats
                                                       in (scope', all id isMatchs)
 
+define :: Pattern -> Value -> ValueScope -> ValueScope
+define pattern val scope = case pattern of
+                             WildcardPattern -> scope
+                             IdPattern name -> insert name val scope
+                             TuplePattern pats -> case val of
+                                                   VTuple items -> defineVals pats items
+                                                   _ -> error $ "Invalid value " ++ show val ++ " for pattern " ++ show pattern
+                             -- maybe should check pattern name and length of pats and args just like the match function above
+                             TConPattern _ pats -> case val of
+                                                   Adt _ args -> defineVals pats args
+                                                   _ -> error $ "Invalid value " ++ show val ++ " for pattern " ++ show pattern
+                           where
+                           defineVals pats items = foldl (\env (pat, item) -> define pat item env)
+                                                         scope $ zip pats items
+
 eval :: Expr -> ValueScope -> (ValueScope, Value)
 eval expr scope = case expr of
                     ENum v -> (scope, VNum v)
@@ -124,11 +153,12 @@ eval expr scope = case expr of
                     ETuple values -> (scope, VTuple $ map (\v -> snd (eval v scope)) values)
                     EList values -> (scope, makeList $ map (\v -> snd (eval v scope)) values)
                     ERecord pairs -> (scope, VRecord $ M.map (\v -> snd (eval v scope)) pairs)
-                    ELambda params _ instrs -> case reverse params of
-                                                (Named name _):xs -> (scope, envCapturingFnWrapper fnChain expr scope) where
-                                                  lastFn = chaininLastFn name instrs
-                                                  fnChain = foldl (\fn (Named n _) -> chainingFn n fn) lastFn xs
-                                                _ -> (scope, VUnit)
+                    ELambda params _ instrs -> let fnV = case reverse params of
+                                                          (Named name _):xs -> fnChain where
+                                                            lastFn = chaininLastFn name instrs
+                                                            fnChain = foldl (\fn (Named n _) -> chainingFn n fn) lastFn xs
+                                                          _ -> VUnit
+                                              in (scope, envCapturingFnWrapper fnV expr scope)
                     EApp fn arg -> case fnV of
                                     Fn f -> let (_, argV) = eval arg scope'
                                            in (scope, f argV scope')
@@ -156,4 +186,17 @@ eval expr scope = case expr of
                                                                      in if isMatch
                                                                         then (scope, snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) instrs)
                                                                         else findPattern val cs
-
+                    EDestructLetBinding main args instrs -> if length args == 0
+                                                           -- define variable
+                                                           then let (_, val) = foldl (\(env, _) instr -> eval instr env) (child scope, VUnit) instrs
+                                                                in (define main val scope, val)
+                                                           -- define function
+                                                           else case main of
+                                                                  IdPattern name -> let fnV = case reverse args of
+                                                                                               pat:pats -> fnChain where
+                                                                                                lastFn = destrChaininLastFn pat instrs
+                                                                                                fnChain = foldl (\fn p -> destrChainingFn p fn) lastFn pats
+                                                                                               _ -> VUnit
+                                                                                   in let fn = envCapturingFnWrapper fnV expr scope
+                                                                                      in (insert name fn scope, fn)
+                                                                  _ -> error $ "Function name can only be a name, whereas a pattern " ++ show main ++ " was provided in " ++ show expr

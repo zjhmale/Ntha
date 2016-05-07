@@ -31,6 +31,7 @@ lookup name (ValueScope parent env) = case M.lookup name env of
                                         Nothing -> Nothing
 
 -- create a child type scope of current parent type scope
+-- just to mock immutable scope, will remove later
 child :: ParentScope -> ValueScope
 child = createScopeWithParent
 
@@ -40,18 +41,20 @@ instance Show ValueScope where
                                               Nothing -> " -| "
 
 type Tag = String
+type FreeVal = Value
 
 data Value = VNum Int
-           | VStr String
            | VChar Char
            | VBool Bool
-           | VList [Value]
            | VTuple [Value]
            | VRecord (M.Map EField Value)
            | VUnit
            | Adt Tag [Value]
            | Fn (Value -> ValueScope -> Value) -- or closure
            | FnApArgs (M.Map String Value)
+           | DestrFnApArgs [PatVal] FreeVal
+
+data PatVal = PatVal Pattern Value
 
 nil :: Value
 nil = Adt "Nil" []
