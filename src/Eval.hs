@@ -80,7 +80,7 @@ visit expr scope capturedEnv excluded = case expr of
                                                                        (sco, env, exc) thenInstrs
                                             (sco'', env'', exc'') = foldl (\(s, c, e) value -> visit value s c e)
                                                                           (sco', env', exc') elseInstrs
-                                          EVar name -> if name `elem` excluded
+                                          EVar name -> if name `notElem` excluded
                                                       then let (scope', val) = eval expr scope
                                                            in (scope', M.insert name val capturedEnv, excluded)
                                                       else (scope, capturedEnv, excluded)
@@ -89,11 +89,11 @@ visit expr scope capturedEnv excluded = case expr of
                                           EDestructLetBinding main _ _ -> (scope, capturedEnv, excludePatternBoundNames main excluded)
                                           EPatternMatching input cases -> let (scope', capturedEnv', excluded') = visit input scope capturedEnv excluded
                                                                          in foldl (\(s, c, e) (Case pat outcomes) -> let e' = excludePatternBoundNames pat e
-                                                                                                                    in foldl (\(sco, env, exc) instr -> visit instr sco env exc)
-                                                                                                                             (s, c, e') outcomes)
+                                                                                                                    in let (s', c', _) = foldl (\(sco, env, exc) instr -> visit instr sco env exc)
+                                                                                                                                                 (s, c, e') outcomes
+                                                                                                                       in (s', c', e))
                                                                                   (scope', capturedEnv', excluded') cases
-                                          _ -> error $ "Unhandled expr " ++ show expr
-
+                                          _ -> (scope, capturedEnv, excluded)
 
 envCapturingFnWrapper :: Value -> Expr -> ValueScope -> Value
 envCapturingFnWrapper fn expr scope = case expr of
@@ -105,8 +105,8 @@ envCapturingFnWrapper fn expr scope = case expr of
                                           capturedEnv = mkCapturedEnv excluded instrs
                                         _ -> VUnit
                                       where
-                                      mkCapturedEnv excluded instrs = let (_, capturedEnv, _) =  foldl (\(s, c, e) instr -> visit instr s c e)
-                                                                                                       (scope, M.empty, excluded) instrs
+                                      mkCapturedEnv excluded instrs = let (_, capturedEnv, _) = foldl (\(s, c, e) instr -> visit instr s c e)
+                                                                                                      (scope, M.empty, excluded) instrs
                                                                       in capturedEnv
                                       mkFn capturedEnv = Fn (\arg scope' -> let scope'' = foldl (\env (k, v) -> insert k v env)
                                                                                                scope' $ M.toList capturedEnv
@@ -157,7 +157,7 @@ eval expr scope = case expr of
                     EUnit -> (scope, VUnit)
                     EVar name -> case lookup name scope of
                                   Just val -> (scope, val)
-                                  Nothing -> error $ "Unknwon identifier " ++ show expr
+                                  Nothing -> error $ "Unknown identifier " ++ show expr
                     EAccessor obj field -> case eval obj scope of
                                             (_, VRecord pairs) -> case M.lookup field pairs of
                                                               Just val -> (scope, val)
