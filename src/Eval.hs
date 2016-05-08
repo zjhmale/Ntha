@@ -199,6 +199,8 @@ eval expr scope = case expr of
                                                                      in if isMatch
                                                                         then (scope, snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) instrs)
                                                                         else findPattern val cs
+                    ELetBinding name def body -> let (scope', _) = eval (EDestructLetBinding name [] [def]) scope
+                                                in (scope, snd (eval body scope'))
                     EDestructLetBinding main args instrs -> if length args == 0
                                                            -- define variable
                                                            then let (_, val) = foldl (\(env, _) instr -> eval instr env) (child scope, VUnit) instrs

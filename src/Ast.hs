@@ -26,7 +26,7 @@ data Expr = EVar EName
           | EApp Expr Expr
           | EIf Expr [Expr] [Expr]
           | EPatternMatching Expr [Case]
-          | ELetBinding EName (Maybe Type) [Named] [Expr]
+          | ELetBinding Pattern Expr Expr
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EProgram [Expr]
@@ -66,9 +66,6 @@ stringOfExpr e = case e of
                                                                                 Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") body)
                   EIf cond thenInstrs elseInstrs -> "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ "else \n" ++ stringOfInstrs elseInstrs where
                     stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ show instr ++ "\n") instrs
-                  ELetBinding name t args instrs -> "let " ++ name ++ " " ++ stringofNameds args ++ (case t of
-                                                                                                      Just t' -> " : " ++ show t'
-                                                                                                      Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") instrs)
                   EProgram instrs -> intercalate "" $ map (\instr -> show instr ++ "\n") instrs
                   _ -> reprOfExpr 0 e
 
@@ -101,10 +98,7 @@ reprOfExpr i e = case e of
                                                                                                                                                                                             [] -> ""
                                                                                                                                                                                             _ -> " " ++ unwords (map show types)) tcons)
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
-                  ELetBinding name t args instrs -> tab i ++ "let " ++ name ++ " " ++ stringofNameds args ++ (case t of
-                                                                                                              Just t' -> " : " ++ show t'
-                                                                                                              Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
-
+                  ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ show body
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
 
 instance Show Expr where
