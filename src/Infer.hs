@@ -220,6 +220,24 @@ analyze term scope nonGeneric = case term of
                                                                (newScope, unitT) elseInstructions
                                     unify thenT elseT
                                     return (newScope', thenT)
+                                  ELetBinding name annoT params instructions -> do
+                                    letTV <- makeVariable
+                                    -- maybe a little non-sense here just to avoid a function can not be polymorphic to itself
+                                    let newScope = insert name letTV $ child scope
+                                    let newNonGeneric = S.insert letTV nonGeneric
+                                    (paramTypes, newScope', newNonGeneric') <- foldM (\(types', env', nonGeneric') (Named name' t) ->
+                                                                                     case t of
+                                                                                       Just t' -> return (types' ++ [t'], insert name' t' env', S.insert t' nonGeneric')
+                                                                                       Nothing -> do
+                                                                                         t' <- makeVariable
+                                                                                         return (types' ++ [t'], insert name' t' env', S.insert t' nonGeneric'))
+                                                                                     ([], newScope, newNonGeneric) params
+                                    rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope' newNonGeneric') unitT instructions
+                                    case annoT of
+                                      Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
+                                      Nothing -> return ()
+                                    let letT = functionT paramTypes rtnT
+                                    return (insert name letT scope, letT)
                                   EDestructLetBinding main args instructions -> do
                                     let newScope = child scope
                                     (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric
