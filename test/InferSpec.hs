@@ -15,9 +15,9 @@ runInferSpecCases :: [(Expr, String)] -> IO ()
 runInferSpecCases exprExpectPairs = do
     assumps <- assumptions
     (_, types, expects) <- foldM (\(env, types, expects) (expr, expect) -> do
-                          (env', ty) <- analyze expr env S.empty
-                          return (env', types ++ [ty], expects ++ [expect]))
-                        (assumps, [], []) exprExpectPairs
+                                    (env', ty) <- analyze expr env S.empty
+                                    return (env', types ++ [ty], expects ++ [expect]))
+                                 (assumps, [], []) exprExpectPairs
     resetId
     resetUniqueName
     (map (PP.text . show) types) `shouldBe` map PP.text expects

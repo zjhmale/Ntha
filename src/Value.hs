@@ -85,7 +85,7 @@ instance Show Value where
   show (VRecord pairs) = stringOfPairs pairs
   show VUnit = "⊥"
   show (Adt tag values) = stringOfAdt tag values
-  show (Fn _) = "fun"
+  show (Fn _) = "<fun>"
   show (FnApArgs pairs) = "FnApArgs(" ++ stringOfPairs pairs ++ ")"
   show (DestrFnApArgs pats val) = "DestrFnApArgs(" ++ intercalate ", " (map show pats) ++ " * " ++ show val ++ ")"
   show (TConArgs values tag) = "TConArgs(" ++ stringOfAdt tag values ++ ")"
