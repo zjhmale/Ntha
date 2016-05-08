@@ -22,6 +22,13 @@ runInferSpecCases exprs expects = do
     resetUniqueName
     (map (PP.text . show) types) `shouldBe` map PP.text expects
 
+failInferSpecCase :: Expr -> String -> IO ()
+failInferSpecCase expr error = do
+    assumps <- assumptions
+    analyze expr assumps S.empty `shouldThrow` errorCall error
+    resetId
+    resetUniqueName
+
 spec :: Spec
 spec = describe "inference test" $
         it "should inference type of given term" $ do
@@ -46,5 +53,15 @@ spec = describe "inference test" $
           let xy = EDestructLetBinding (IdPattern "xy") [] [ETuple [EApp (EVar "len") (EVar "xs"), EApp (EVar "len") (EVar"ys")]]
           let zs = EDestructLetBinding (IdPattern "zs") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EApp (EApp (EVar "Cons") $ ENum 4) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]
           let z = EDestructLetBinding (IdPattern "z") [] [EApp (EVar "len") $ EVar "zs"]
+          let g = EDestructLetBinding (IdPattern "g") [] [ELambda [Named "x" Nothing, Named "y" Nothing] Nothing [EApp (EApp (EVar "+") $ EVar "x") $ EVar "y"]]
+          let res0 = EDestructLetBinding (IdPattern "res0") [] [EApp (EApp (EVar "g") $ ENum 3) $ ENum 3]
+          let f = EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
+          let ff = EDestructLetBinding (IdPattern "ff") [] [ELambda [Named "x" (Just intT), Named "y" (Just boolT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
+          let res1 = EDestructLetBinding (IdPattern "res1") [] [EApp (EApp (EApp (EVar "f") $ ENum 8) $ ENum 2) $ ENum 3]
+          let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
+          let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
+          let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
           -- show up type variables need to be normalized
-          runInferSpecCases [listData, xs, ys, len, xy, zs, z] ["[α]", "[γ]", "[Number]", "[μ] → Number", "(Number * Number)", "[Number]", "Number"]
+          runInferSpecCases [listData, xs, ys, len, xy, zs, z, g, res0, f, res1, id, res2, res3]
+                            ["[α]", "[γ]", "[Number]", "[μ] → Number", "(Number * Number)", "[Number]", "Number", "Number → (Number → Number)", "Number", "Number → (Number → (Number → Number))", "Number", "η → η", "Number", "Boolean"]
+          failInferSpecCase ff "Type mismatch Boolean ≠ Number"
