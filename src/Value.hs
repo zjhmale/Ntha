@@ -69,18 +69,26 @@ cons h t = Adt "Cons" [h, t]
 binFn :: (Value -> Value -> Value) -> Value
 binFn f = Fn (\arg1 _ -> Fn (\arg2 _ -> f arg1 arg2))
 
+stringOfAdt :: Tag -> [Value] -> String
+stringOfAdt tag values = tag ++ case values of
+                                  [] -> ""
+                                  _ -> " " ++ intercalate " | " (map show values)
+
+stringOfPairs :: M.Map String Value -> String
+stringOfPairs pairs = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ show v) pairs) ++ "}"
+
 instance Show Value where
   show (VNum i) = show i
   show (VChar c) = [c]
   show (VBool b) = show b
   show (VTuple values) = "(" ++ intercalate "," (map show values) ++ ")"
-  show (VRecord pairs) = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ show v) pairs) ++ "}"
+  show (VRecord pairs) = stringOfPairs pairs
   show VUnit = "⊥"
-  show (Adt tag values) = tag ++ intercalate " | " (map show values)
+  show (Adt tag values) = stringOfAdt tag values
   show (Fn _) = "fun"
-  show (FnApArgs pairs) = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ show v) pairs) ++ "}"
-  show (DestrFnApArgs pats val) = "[" ++ intercalate ", " (map show pats) ++ "]" ++ " * " ++ show val
-  show (TConArgs values tag) = tag ++ intercalate " | " (map show values)
+  show (FnApArgs pairs) = "FnApArgs(" ++ stringOfPairs pairs ++ ")"
+  show (DestrFnApArgs pats val) = "DestrFnApArgs(" ++ intercalate ", " (map show pats) ++ " * " ++ show val ++ ")"
+  show (TConArgs values tag) = "TConArgs(" ++ stringOfAdt tag values ++ ")"
 
 instance Eq Value where
   VNum int1 == VNum int2 = int1 == int2

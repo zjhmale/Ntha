@@ -29,18 +29,22 @@ data Expr = EVar EName
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EProgram [Expr]
+          deriving (Eq, Ord)
 
 data TypeConstructor = TypeConstructor EName [Type]
+                       deriving (Eq, Ord)
 
 data Named = Named EName (Maybe Type)
+             deriving (Eq, Ord)
 
 data Pattern = WildcardPattern
              | IdPattern EName
              | TuplePattern [Pattern]
              | TConPattern EName [Pattern]
-             deriving (Eq)
+             deriving (Eq, Ord)
 
 data Case = Case Pattern [Expr]
+            deriving (Eq, Ord)
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"

@@ -11,13 +11,13 @@ import qualified Text.PrettyPrint as PP
 import qualified Data.Set as S
 import Test.Hspec
 
-runInferSpecCases :: [Expr] -> [String] -> IO ()
-runInferSpecCases exprs expects = do
+runInferSpecCases :: [(Expr, String)] -> IO ()
+runInferSpecCases exprExpectPairs = do
     assumps <- assumptions
-    (_, types) <- foldM (\(env, types) expr -> do
-                                        (env', ty) <- analyze expr env S.empty
-                                        return (env', types ++ [ty]))
-                        (assumps, []) exprs
+    (_, types, expects) <- foldM (\(env, types, expects) (expr, expect) -> do
+                          (env', ty) <- analyze expr env S.empty
+                          return (env', types ++ [ty], expects ++ [expect]))
+                        (assumps, [], []) exprExpectPairs
     resetId
     resetUniqueName
     (map (PP.text . show) types) `shouldBe` map PP.text expects
@@ -33,6 +33,8 @@ spec :: Spec
 spec = describe "inference test" $
         it "should inference type of given term" $ do
           -- data List a = Cons a (List a) | Nil
+          resetId
+          resetUniqueName
           tvarA <- makeVariable
           let name = "List"
           let vars = [tvarA]
@@ -62,6 +64,19 @@ spec = describe "inference test" $
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
           -- show up type variables need to be normalized
-          runInferSpecCases [listData, xs, ys, len, xy, zs, z, g, res0, f, res1, id, res2, res3]
-                            ["[α]", "[γ]", "[Number]", "[μ] → Number", "(Number * Number)", "[Number]", "Number", "Number → (Number → Number)", "Number", "Number → (Number → (Number → Number))", "Number", "η → η", "Number", "Boolean"]
+          let cases = [(listData, "[α]"),
+                       (xs, "[γ]"),
+                       (ys, "[Number]"),
+                       (len, "[μ] → Number"),
+                       (xy, "(Number * Number)"),
+                       (zs, "[Number]"),
+                       (z, "Number"),
+                       (g, "Number → (Number → Number)"),
+                       (res0, "Number"),
+                       (f, "Number → (Number → (Number → Number))"),
+                       (res1, "Number"),
+                       (id, "η → η"),
+                       (res2, "Number"),
+                       (res3, "Boolean")]
+          runInferSpecCases cases
           failInferSpecCase ff "Type mismatch Boolean ≠ Number"
