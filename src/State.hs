@@ -3,7 +3,7 @@
 module State where
 
 import Data.IORef
-import System.IO.Unsafe(unsafePerformIO)
+import System.IO.Unsafe (unsafePerformIO)
 
 createState :: a -> IORef a
 createState = unsafePerformIO . newIORef

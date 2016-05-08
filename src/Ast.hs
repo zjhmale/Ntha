@@ -3,7 +3,7 @@
 module Ast where
 
 import Type
-import Data.List(intercalate)
+import Data.List (intercalate)
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 
@@ -81,7 +81,7 @@ reprOfExpr i e = case e of
                   EUnit -> tab i ++ "()"
                   EList es -> tab i ++ show es
                   ETuple es -> "(" ++ intercalate "," (map (reprOfExpr 0) es) ++ ")"
-                  ERecord pairs -> "{" ++ intercalate "," (M.keys $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
+                  ERecord pairs -> "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
                   EApp _ _ -> tab i ++ show e
                   ELambda params annoT body -> tab i ++ "λ" ++ stringofNameds params ++ (case annoT of
                                                                                          Just annoT' -> " : " ++ show annoT'

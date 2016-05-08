@@ -4,10 +4,10 @@ module Type where
 
 import State
 import Data.IORef
-import Data.List(intercalate)
+import Data.List (intercalate)
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
-import System.IO.Unsafe(unsafePerformIO)
+import System.IO.Unsafe (unsafePerformIO)
 
 type Id = Int
 type TName = String

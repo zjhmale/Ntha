@@ -3,6 +3,7 @@
 module Value where
 
 import Ast
+import Data.List (intercalate)
 import Prelude hiding (lookup)
 import qualified Data.Map as M
 
@@ -56,7 +57,7 @@ data Value = VNum Int
            | TConArgs [Value] Tag
 
 data PatVal = PatVal Pattern Value
-              deriving (Eq)
+              deriving (Eq, Show)
 
 nil :: Value
 nil = Adt "Nil" []
@@ -70,6 +71,16 @@ binFn f = Fn (\arg1 _ -> Fn (\arg2 _ -> f arg1 arg2))
 
 instance Show Value where
   show (VNum i) = show i
+  show (VChar c) = [c]
+  show (VBool b) = show b
+  show (VTuple values) = "(" ++ intercalate "," (map show values) ++ ")"
+  show (VRecord pairs) = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ show v) pairs) ++ "}"
+  show VUnit = "⊥"
+  show (Adt tag values) = tag ++ intercalate " | " (map show values)
+  show (Fn _) = "fun"
+  show (FnApArgs pairs) = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ show v) pairs) ++ "}"
+  show (DestrFnApArgs pats val) = "[" ++ intercalate ", " (map show pats) ++ "]" ++ " * " ++ show val
+  show (TConArgs values tag) = tag ++ intercalate " | " (map show values)
 
 instance Eq Value where
   VNum int1 == VNum int2 = int1 == int2
