@@ -50,6 +50,7 @@ spec = describe "inference test" $
           let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
+          let idpair = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) (ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])
           let cases = [(listData, Just VUnit),
                        (xs, Just $ Adt "Nil" []),
                        (ys, Just $ Adt "Cons" [VNum 5, Adt "Nil" []]),
@@ -63,5 +64,6 @@ spec = describe "inference test" $
                        (res1, Just $ VNum 13),
                        (id, Nothing),
                        (res2, Just $ VNum 3),
-                       (res3, Just $ VBool True)]
+                       (res3, Just $ VBool True),
+                       (idpair, Just $ VTuple [VNum 3, VBool True])]
           runEvalSpecCases cases
