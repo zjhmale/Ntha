@@ -1,3 +1,5 @@
+{-# LANGUAGE UnicodeSyntax #-}
+
 module EvalSpec where
 
 import Ast
@@ -10,10 +12,10 @@ import Test.Hspec
 
 runEvalSpecCases :: [(Expr, Maybe Value)] -> IO ()
 runEvalSpecCases exprExpects = do
-    let (_, vals, expects) = foldl (\(env, vals, expects) (expr, expect) -> let (env', val) = eval expr env
+    let (_, vals, expects) = foldl (\(env, vals, expects) (expr, expect) → let (env', val) = eval expr env
                                                                            in case expect of
-                                                                              Just e -> (env', vals ++ [val], expects ++ [e])
-                                                                              Nothing -> (env', vals, expects))
+                                                                                Just e -> (env', vals ++ [val], expects ++ [e])
+                                                                                Nothing -> (env', vals, expects))
                                    (builtins, [], []) exprExpects
     (map (PP.text . show) vals) `shouldBe` map (PP.text . show) expects
 
@@ -41,20 +43,25 @@ spec = describe "inference test" $
           let xy = EDestructLetBinding (IdPattern "xy") [] [ETuple [EApp (EVar "len") (EVar "xs"), EApp (EVar "len") (EVar"ys")]]
           let zs = EDestructLetBinding (IdPattern "zs") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EApp (EApp (EVar "Cons") $ ENum 4) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]
           let z = EDestructLetBinding (IdPattern "z") [] [EApp (EVar "len") $ EVar "zs"]
-          1 `shouldBe` 1
-          --let g = EDestructLetBinding (IdPattern "g") [] [ELambda [Named "x" Nothing, Named "y" Nothing] Nothing [EApp (EApp (EVar "+") $ EVar "x") $ EVar "y"]]
-          --let res0 = EDestructLetBinding (IdPattern "res0") [] [EApp (EApp (EVar "g") $ ENum 3) $ ENum 3]
-          --let f = EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
-          --let res1 = EDestructLetBinding (IdPattern "res1") [] [EApp (EApp (EApp (EVar "f") $ ENum 8) $ ENum 2) $ ENum 3]
-          --let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
-          --let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
-          --let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
-          -- show up type variables need to be normalized
+          let g = EDestructLetBinding (IdPattern "g") [] [ELambda [Named "x" Nothing, Named "y" Nothing] Nothing [EApp (EApp (EVar "+") $ EVar "x") $ EVar "y"]]
+          let res0 = EDestructLetBinding (IdPattern "res0") [] [EApp (EApp (EVar "g") $ ENum 3) $ ENum 3]
+          let f = EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
+          let res1 = EDestructLetBinding (IdPattern "res1") [] [EApp (EApp (EApp (EVar "f") $ ENum 8) $ ENum 2) $ ENum 3]
+          let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
+          let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
+          let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
           let cases = [(listData, Just VUnit),
                        (xs, Just $ Adt "Nil" []),
                        (ys, Just $ Adt "Cons" [VNum 5, Adt "Nil" []]),
                        (len, Nothing),
                        (xy, Just $ VTuple [VNum 0, VNum 1]),
                        (zs, Just $ Adt "Cons" [VNum 5, Adt "Cons" [VNum 4, Adt "Cons" [VNum 3, Adt "Nil" []]]]),
-                       (z, Just $ VNum 3)]
+                       (z, Just $ VNum 3),
+                       (g, Nothing),
+                       (res0, Just $ VNum 6),
+                       (f, Nothing),
+                       (res1, Just $ VNum 13),
+                       (id, Nothing),
+                       (res2, Just $ VNum 3),
+                       (res3, Just $ VBool True)]
           runEvalSpecCases cases
