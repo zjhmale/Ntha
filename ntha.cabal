@@ -22,10 +22,14 @@ library
                      , Infer
                      , Eval
                      , Prologue
+                     --, Lexer
+                     --, Parser
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , pretty
                      , monad-loops
+  build-tools:         happy
+                     , alex
   default-language:    Haskell2010
 
 executable ntha-exe

@@ -112,6 +112,10 @@ visitPattern pattern scope nonGeneric = case pattern of
                                           IdPattern name -> do
                                             resT <- makeVariable
                                             return (insert name resT scope, S.insert resT nonGeneric, resT)
+                                          NumPattern _ -> return (scope, nonGeneric, intT)
+                                          BoolPattern _ -> return (scope, nonGeneric, boolT)
+                                          CharPattern _ -> return (scope, nonGeneric, charT)
+                                          StrPattern _ -> return (scope, nonGeneric, strT)
                                           TuplePattern items -> do
                                             (itemTypes, newScope, newNonGeneric) <- foldM (\(types, env, nonGen) item -> do
                                                                                             (newEnv, newNonGen, itemT) <- visitPattern item env nonGen
@@ -139,7 +143,6 @@ definePattern :: Pattern -> Type -> TypeScope -> Infer TypeScope
 definePattern pattern t scope = do
   tP <- prune t
   case pattern of
-    WildcardPattern -> return scope
     IdPattern name -> return $ insert name tP scope
     TuplePattern items -> case tP of
                           TOper _ types -> do
@@ -157,6 +160,7 @@ definePattern pattern t scope = do
                                                   scope $ zip patterns types
                                 return newScope
                               _ -> error $ "Invalid type " ++ show tP ++ " for pattern " ++ show pattern
+    _ -> return scope
 
 analyze :: Expr -> TypeScope -> NonGeneric -> Infer (TypeScope, Type)
 analyze term scope nonGeneric = case term of

@@ -40,6 +40,10 @@ data Named = Named EName (Maybe Type)
 
 data Pattern = WildcardPattern
              | IdPattern EName
+             | NumPattern Int
+             | BoolPattern Bool
+             | CharPattern Char
+             | StrPattern String
              | TuplePattern [Pattern]
              | TConPattern EName [Pattern]
              deriving (Eq, Ord)

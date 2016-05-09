@@ -63,6 +63,7 @@ spec = describe "inference test" $
           let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
+          let fib = EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0], Case (NumPattern 1) [ENum 1], Case WildcardPattern [EApp (EApp (EVar "+") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 1) $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 2]]]
           -- let polymorphism here!!!
           let idpair = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) (ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])
           -- show up type variables need to be normalized
@@ -80,6 +81,7 @@ spec = describe "inference test" $
                        (id, "η → η"),
                        (res2, "Number"),
                        (res3, "Boolean"),
-                       (idpair, "(Number * Boolean)")]
+                       (idpair, "(Number * Boolean)"),
+                       (fib, "Number → Number")]
           runInferSpecCases cases
           failInferSpecCase ff "Type mismatch Boolean ≠ Number"
