@@ -110,6 +110,10 @@ instance Show Expr where
 
 instance Show Pattern where
     show WildcardPattern = "_"
+    show (NumPattern val) = "pint→" ++ show val
+    show (BoolPattern val) = "pbool→" ++ show val
+    show (CharPattern val) = "pchar→" ++ show val
+    show (StrPattern val) = "pstr→" ++ show val
     show (IdPattern name) = "'" ++ name ++ "'"
     show (TuplePattern pattens) = "(" ++ intercalate "," (map show pattens) ++ ")"
     show (TConPattern name pattens) = name ++ " " ++ show pattens

@@ -117,6 +117,10 @@ match :: Value -> Pattern -> ValueScope -> (ValueScope, Bool)
 match input pattern scope = case pattern of
                               WildcardPattern -> (scope, True)
                               IdPattern name -> (insert name input scope, True)
+                              NumPattern val -> (scope, input == (VNum val))
+                              BoolPattern val -> (scope, input == (VBool val))
+                              CharPattern val -> (scope, input == (VChar val))
+                              StrPattern val -> (scope, input == (VStr val))
                               TuplePattern pats -> case input of
                                                     VTuple items -> if length items /= length pats
                                                                    then (scope, False)
@@ -135,7 +139,6 @@ match input pattern scope = case pattern of
 
 define :: Pattern -> Value -> ValueScope -> ValueScope
 define pattern val scope = case pattern of
-                             WildcardPattern -> scope
                              IdPattern name -> insert name val scope
                              TuplePattern pats -> case val of
                                                    VTuple items -> defineVals pats items
@@ -144,6 +147,7 @@ define pattern val scope = case pattern of
                              TConPattern _ pats -> case val of
                                                    Adt _ args -> defineVals pats args
                                                    _ -> error $ "Invalid value " ++ show val ++ " for pattern " ++ show pattern
+                             _ -> scope
                            where
                            defineVals pats items = foldl (\env (pat, item) -> define pat item env)
                                                          scope $ zip pats items
