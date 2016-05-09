@@ -13,4 +13,5 @@ assumptions = do
                                            ("-", functionT [intT, intT] intT)]
 
 builtins :: ValueScope
-builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (VNum $ a + b)))]
+builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (VNum $ a + b))),
+                                            ("-", binFn (\(VNum a) (VNum b) -> (VNum $ a - b)))]

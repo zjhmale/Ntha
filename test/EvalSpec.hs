@@ -51,6 +51,11 @@ spec = describe "inference test" $
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
           let idpair = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) (ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])
+          let fib = EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0], Case (NumPattern 1) [ENum 1], Case WildcardPattern [EApp (EApp (EVar "+") (EApp (EVar "fib") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 1)) $ EApp (EVar "fib") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 2]]]
+          let fib0 = EApp (EVar "fib") $ ENum 0
+          let fib1 = EApp (EVar "fib") $ ENum 1
+          let fib5 = EApp (EVar "fib") $ ENum 5
+          let fib6 = EApp (EVar "fib") $ ENum 6
           let cases = [(listData, Just VUnit),
                        (xs, Just $ Adt "Nil" []),
                        (ys, Just $ Adt "Cons" [VNum 5, Adt "Nil" []]),
@@ -65,5 +70,10 @@ spec = describe "inference test" $
                        (id, Nothing),
                        (res2, Just $ VNum 3),
                        (res3, Just $ VBool True),
-                       (idpair, Just $ VTuple [VNum 3, VBool True])]
+                       (idpair, Just $ VTuple [VNum 3, VBool True]),
+                       (fib, Nothing),
+                       (fib0, Just $ VNum 0),
+                       (fib1, Just $ VNum 1),
+                       (fib5, Just $ VNum 5),
+                       (fib6, Just $ VNum 8)]
           runEvalSpecCases cases
