@@ -22,26 +22,21 @@ import Lexer
 
 %%
 
-Expr : '(' defun VAR '[' VAR ']' Form ')'        { TForall $2 $4 }
-     | exists VAR dot Expr         { TExists $2 $4 }
-     | Form                        { $1 }
+Expr : '(' defun VAR '[' Args ']' Forms ')'        { EDestructLetBinding (IdPattern $3) $5 $7 }
+     | Form                                        { $1 }
 
-Form : Form equiv Form             { TEquiv $1 $3 }
-     | Form impl Form              { TImpl $1 $3 }
-     | Form disj Form              { TDisj $1 $3 }
-     | Form conj Form              { TConj $1 $3 }
-     | Atom                        { $1 }
+Args : {- empty -}                                 { [] }
+     | Args VAR                                    { (IdPattern $2) : $1 }
 
-Atom : true                        { TTrue }
-     | false                       { TFalse }
-     | VAR                         { TVar $1 }
-     | neg Atom                    { TNeg $2 }
-     | '(' Expr ')'                { $2 }
+Form : '(' VAR VAR VAR ')'                         { EApp (EApp (EVar $2) (EVar $3)) (EVar $4) }
+
+Forms : Form                                       { [$1] }
+      | Forms Form                                 { $2 : $1 }
 
 {
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-parseExpr :: String -> Term
+parseExpr :: String -> Expr
 parseExpr = expr . scanTokens
 }
