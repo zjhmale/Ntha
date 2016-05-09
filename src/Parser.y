@@ -14,8 +14,9 @@ import Lexer
     match    { MATCH }
     defun    { DEFUN }
     arrow    { ARROW }
-    '[' { LBRACKET }
-    ']' { RBRACKET }
+    vcon     { VCON $$ }
+    '['      { LBRACKET }
+    ']'      { RBRACKET }
     '('      { LPAREN }
     ')'      { RPAREN }
     VAR      { VAR $$ }
@@ -26,12 +27,21 @@ Expr : '(' defun VAR '[' Args ']' Forms ')'        { EDestructLetBinding (IdPatt
      | Form                                        { $1 }
 
 Args : {- empty -}                                 { [] }
-     | Args VAR                                    { (IdPattern $2) : $1 }
+     | VAR Args                                    { (IdPattern $1) : $2 }
 
-Form : '(' VAR VAR VAR ')'                         { EApp (EApp (EVar $2) (EVar $3)) (EVar $4) }
+Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
+     | '(' VAR VAR VAR ')'                         { EApp (EApp (EVar $2) (EVar $3)) (EVar $4) }
 
 Forms : Form                                       { [$1] }
-      | Forms Form                                 { $2 : $1 }
+      | Form Forms                                 { $1 : $2 }
+
+Pattern : vcon Args                                { TConPattern $1 $2 }
+
+Case : '(' Pattern arrow Forms ')'                 { Case $2 $4 }
+
+Cases : Case                                       { [$1] }
+      | Case Cases                                 { $1 : $2 }
+
 
 {
 parseError :: [Token] -> a

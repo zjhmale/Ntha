@@ -5,8 +5,9 @@ import Ast(EName)
 
 %wrapper "basic"
 
+$capital = [A-Z]
 $letter = [a-zA-Z]
-$eol    = [\n]
+$eol = [\n]
 
 tokens :-
        $eol         ;
@@ -21,6 +22,7 @@ tokens :-
        "]"          { \_ -> RBRACKET }
        "("          { \_ -> LPAREN }
        ")"          { \_ -> RPAREN }
+       $capital $letter+ { \s -> VCON s }
        $letter+     { \s -> VAR s }
 
 {
@@ -33,6 +35,7 @@ data Token = DATA
            | LPAREN
            | RPAREN
            | VAR EName
+           | VCON EName -- value constructor
            deriving(Eq, Show)
 
 scanTokens = alexScanTokens
