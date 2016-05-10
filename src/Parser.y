@@ -63,7 +63,7 @@ bindings : binding                                 { [$1] }
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
      | '(' lambda Nameds arrow Forms ')'           { ELambda $3 Nothing $5 }
      | '(' let '[' bindings ']' Forms ')'          { mkNestedLetBindings (ENestLetBinding $4 $6) }
-     | '(' Form Form Form ')'                      { EApp (EApp $2 $3) $4 }
+     | '(' Form Forms ')'                          { mkNestedApplication (ENestApplication $2 $3) }
      | '[' Atoms ']'                               { EList $2 }
      | Atom                                        { $1 }
 
