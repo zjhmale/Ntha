@@ -13,6 +13,7 @@ import Lexer
     data     { DATA }
     match    { MATCH }
     defun    { DEFUN }
+    lambda   { LAMBDA }
     arrow    { ARROW }
     vcon     { VCON $$ }
     '['      { LBRACKET }
@@ -29,7 +30,11 @@ Expr : '(' defun VAR '[' Args ']' Forms ')'        { EDestructLetBinding (IdPatt
 Args : {- empty -}                                 { [] }
      | VAR Args                                    { (IdPattern $1) : $2 }
 
+Nameds : {- empty -}                                 { [] }
+       | VAR Nameds                                    { (Named $1 Nothing) : $2 }
+
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
+     | '(' lambda Nameds arrow Forms ')'             { ELambda $3 Nothing $5 }
      | '(' VAR VAR VAR ')'                         { EApp (EApp (EVar $2) (EVar $3)) (EVar $4) }
 
 Forms : Form                                       { [$1] }

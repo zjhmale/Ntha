@@ -17,6 +17,7 @@ tokens :-
        "data"       { \_ -> DATA }
        "match"      { \_ -> MATCH }
        "ƒ"          { \_ -> DEFUN }
+       "λ"          { \_ -> LAMBDA }
        "⇒"          { \_ -> ARROW }
        "["          { \_ -> LBRACKET }
        "]"          { \_ -> RBRACKET }
@@ -29,6 +30,7 @@ tokens :-
 data Token = DATA
            | MATCH
            | DEFUN
+           | LAMBDA
            | ARROW
            | LBRACKET
            | RBRACKET
