@@ -22,3 +22,4 @@ spec = do
       resetUniqueName
       parseExpr "(data List a (Cons a (List a)) Nil)" `shouldBe` listData
       parseExpr "(≡ xs Nil)" `shouldBe` EDestructLetBinding (IdPattern "xs") [] [(EVar "Nil")]
+      parseExpr "(+ 1 2 3)" `shouldBe` EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)
