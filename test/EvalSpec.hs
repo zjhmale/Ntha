@@ -20,8 +20,8 @@ runEvalSpecCases exprExpects = do
     (map (PP.text . show) vals) `shouldBe` map (PP.text . show) expects
 
 spec :: Spec
-spec = describe "inference test" $
-        it "should inference type of given term" $ do
+spec = describe "evaluation test" $
+        it "should get the value of given term" $ do
           -- data List a = Cons a (List a) | Nil
           tvarA <- makeVariable
           let name = "List"

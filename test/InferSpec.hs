@@ -43,8 +43,8 @@ spec = describe "inference test" $
           let nilConstructor = TypeConstructor "Nil" []
           let listData = EDataDecl "List" dataType vars [consConstructor, nilConstructor]
           (PP.text . show $ listData) `shouldBe` PP.text "data List α = Cons α [α] | Nil"
-          let xs = EDestructLetBinding (IdPattern "xs") [] [(EVar "Nil")] -- let ys = Nil
-          let ys = EDestructLetBinding (IdPattern "ys") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EVar "Nil"] -- let xs = Cons 5 Nil
+          let xs = EDestructLetBinding (IdPattern "xs") [] [(EVar "Nil")] -- let xs = Nil
+          let ys = EDestructLetBinding (IdPattern "ys") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EVar "Nil"] -- let ys = Cons 5 Nil
           {-
             let len l =
               match l
