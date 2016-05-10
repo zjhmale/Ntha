@@ -20,6 +20,8 @@ import Lexer
     ']'      { RBRACKET }
     '('      { LPAREN }
     ')'      { RPAREN }
+    '<'      { LANGLEBRACKET }
+    '>'      { RANGLEBRACKET }
     let      { LET }
     VAR      { VAR $$ }
     OPERATOR { OPERATOR $$ }
@@ -63,7 +65,8 @@ Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) 
      | '(' lambda Nameds arrow Forms ')'           { ELambda $3 Nothing $5 }
      | '(' let '[' bindings ']' Forms ')'          { mkNestedLetBindings (ENestLetBinding $4 $6) }
      | '(' Form Forms ')'                          { mkNestedApplication (ENestApplication $2 $3) }
-     | '[' Atoms ']'                               { EList $2 }
+     | '[' Forms ']'                               { EList $2 }
+     | '<' Forms '>'                               { ETuple $2 }
      | Atom                                        { $1 }
 
 Forms : Form                                       { [$1] }
@@ -81,9 +84,6 @@ Atom : boolean                                     { EBool $1 }
      | VAR                                         { EVar $1 }
      | OPERATOR                                    { EVar $1 }
      | con                                         { EVar $1 }
-
-Atoms : {- empty -}                                { [] }
-      | Atom Atoms                                 { $1 : $2 }
 
 {
 parseError :: [Token] -> a

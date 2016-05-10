@@ -26,6 +26,8 @@ tokens :-
        "]"               { \_ -> RBRACKET }
        "("               { \_ -> LPAREN }
        ")"               { \_ -> RPAREN }
+       "<"               { \_ -> LANGLEBRACKET }
+       ">"               { \_ -> RANGLEBRACKET }
        "let"             { \_ -> LET }
        "true" | "false"  { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $capital $letter+ { \s -> CON s }
@@ -43,6 +45,8 @@ data Token = DATA
            | RBRACKET
            | LPAREN
            | RPAREN
+           | LANGLEBRACKET
+           | RANGLEBRACKET
            | VAR EName
            | CON EName -- constructor
            | LET
