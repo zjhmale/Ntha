@@ -27,7 +27,6 @@ tokens :-
        "("               { \_ -> LPAREN }
        ")"               { \_ -> RPAREN }
        "let"             { \_ -> LET }
-       "≡"               { \_ -> DEFINE }
        "true" | "false"  { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $capital $letter+ { \s -> CON s }
        $letter+          { \s -> VAR s }
@@ -47,7 +46,6 @@ data Token = DATA
            | VAR EName
            | CON EName -- constructor
            | LET
-           | DEFINE
            | OPERATOR String
            | BOOLEAN Bool
            | NUMBER Int
