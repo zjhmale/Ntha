@@ -1,11 +1,11 @@
 name:                ntha
 version:             0.1.0.0
-synopsis:            a tiny static typed language with global type inference and JIT compiler
+synopsis:            a tiny statically typed, functional programming language with global type inference and JIT compiler
 description:         Please see README.md
 homepage:            https://github.com/zjhmale/ntha
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
+author:              zjhmale
 maintainer:          zjhmale@gmail.com
 copyright:           2016 zjhmale
 build-type:          Simple
