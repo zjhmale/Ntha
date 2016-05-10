@@ -226,7 +226,7 @@ analyze term scope nonGeneric = case term of
                                     return (newScope', thenT)
                                   ELetBinding main def body -> do
                                     (scope', _) <- analyze (EDestructLetBinding main [] [def]) scope nonGeneric
-                                    analyze body scope' nonGeneric
+                                    foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope', unitT) body
                                   EDestructLetBinding main args instructions -> do
                                     let newScope = child scope
                                     (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric

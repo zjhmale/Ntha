@@ -29,7 +29,7 @@ data Expr = EVar EName
           | EApp Expr Expr
           | EIf Expr [Expr] [Expr]
           | EPatternMatching Expr [Case]
-          | ELetBinding Pattern Expr Expr
+          | ELetBinding Pattern Expr [Expr]
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EProgram [Expr]
@@ -82,6 +82,8 @@ mkDataDeclExpr (ETConstructor name args constructors) = unsafePerformIO $ do
     return $ EDataDecl name dataType vars constructors'
 mkDataDeclExpr e = e
 
+--mkNestedLetBindings :: [Expr] -> [Expr]
+
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"
 
@@ -133,7 +135,7 @@ reprOfExpr i e = case e of
                                                                                                                                                                                             [] -> ""
                                                                                                                                                                                             _ -> " " ++ unwords (map show types)) tcons)
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
-                  ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ show body
+                  ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
                   ETConstructor name args constructors -> "data " ++ name ++ " " ++ unwords args ++ " = " ++ intercalate " | " (map show constructors)
 
