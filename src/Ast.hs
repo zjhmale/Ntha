@@ -3,7 +3,10 @@
 module Ast where
 
 import Type
+import Data.Maybe (fromMaybe)
 import Data.List (intercalate)
+import System.IO.Unsafe (unsafePerformIO)
+import Control.Monad
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 
@@ -59,6 +62,25 @@ data EVConArg = EVCAVar EName
 
 data EVConstructor = EVConstructor EName [EVConArg]
                      deriving (Show, Eq, Ord)
+
+readEnv :: (M.Map EName Type) -> EName -> Type
+readEnv env name = fromMaybe unitT $ M.lookup name env
+
+mkDataDeclExpr :: Expr -> Expr
+mkDataDeclExpr (ETConstructor name args constructors) = unsafePerformIO $ do
+    (env, vars) <- foldM (\(env, vars) arg -> do
+                           var <- makeVariable
+                           return (M.insert arg var env, vars ++ [var]))
+                   (M.empty, []) args
+    let dataType = TOper name vars
+    let constructors' = map (\(EVConstructor cname cargs) -> let cargs' = map (\arg -> case arg of
+                                                                                       EVCAVar aname -> readEnv env aname
+                                                                                       EVCAOper aname operArgs -> TOper aname $ map (readEnv env) operArgs)
+                                                                             cargs
+                                                            in TypeConstructor cname cargs')
+                            constructors
+    return $ EDataDecl name dataType vars constructors'
+mkDataDeclExpr e = e
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"

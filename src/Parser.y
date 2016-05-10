@@ -25,7 +25,7 @@ import Lexer
 %%
 
 Expr : '(' defun VAR '[' Args ']' Forms ')'        { EDestructLetBinding (IdPattern $3) $5 $7 }
-     | '(' data con SimpleArgs VConstructors ')'   { ETConstructor $3 $4 $5 }
+     | '(' data con SimpleArgs VConstructors ')'   { mkDataDeclExpr (ETConstructor $3 $4 $5) }
      | Form                                        { $1 }
 
 SimpleArgs : {- empty -}                           { [] }
