@@ -1,6 +1,7 @@
 {
 module Lexer where
-import Ast(EName)
+import Ast (EName)
+import Data.Char (toUpper)
 }
 
 %wrapper "basic"
@@ -8,6 +9,8 @@ import Ast(EName)
 $capital = [A-Z]
 $letter = [a-zA-Z]
 $eol = [\n]
+$operator = [\+\-\*\/]
+$digit = 0-9
 
 tokens :-
        $eol              ;
@@ -25,8 +28,11 @@ tokens :-
        ")"               { \_ -> RPAREN }
        "let"             { \_ -> LET }
        "≡"               { \_ -> DEFINE }
+       "true" | "false"  { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $capital $letter+ { \s -> CON s }
        $letter+          { \s -> VAR s }
+       $operator         { \s -> OPERATOR s }
+       $digit+           { \s -> NUMBER (read s) }
 
 {
 data Token = DATA
@@ -42,6 +48,9 @@ data Token = DATA
            | CON EName -- constructor
            | LET
            | DEFINE
+           | OPERATOR String
+           | BOOLEAN Bool
+           | NUMBER Int
            deriving(Eq, Show)
 
 scanTokens = alexScanTokens

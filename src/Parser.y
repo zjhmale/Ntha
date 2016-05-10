@@ -23,6 +23,9 @@ import Lexer
     let      { LET }
     define   { DEFINE }
     VAR      { VAR $$ }
+    OPERATOR { OPERATOR $$ }
+    number   { NUMBER $$ }
+    boolean  { BOOLEAN $$ }
 
 %%
 
@@ -54,7 +57,8 @@ Nameds : {- empty -}                               { [] }
 
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
      | '(' lambda Nameds arrow Forms ')'           { ELambda $3 Nothing $5 }
-     | '(' VAR VAR VAR ')'                         { EApp (EApp (EVar $2) (EVar $3)) (EVar $4) }
+     | '(' Form Form Form ')'                      { EApp (EApp $2 $3) $4 }
+     | Atom                                        { $1 }
 
 Forms : Form                                       { [$1] }
       | Form Forms                                 { $1 : $2 }
@@ -65,6 +69,12 @@ Case : '(' Pattern arrow Forms ')'                 { Case $2 $4 }
 
 Cases : Case                                       { [$1] }
       | Case Cases                                 { $1 : $2 }
+
+Atom : boolean                                     { EBool $1 }
+     | number                                      { ENum $1 }
+     | VAR                                         { EVar $1 }
+     | OPERATOR                                    { EVar $1 }
+     | con                                         { EVar $1 }
 
 {
 parseError :: [Token] -> a
