@@ -23,6 +23,8 @@ tokens :-
        "]"               { \_ -> RBRACKET }
        "("               { \_ -> LPAREN }
        ")"               { \_ -> RPAREN }
+       "let"             { \_ -> LET }
+       "≡"               { \_ -> DEFINE }
        $capital $letter+ { \s -> CON s }
        $letter+          { \s -> VAR s }
 
@@ -38,6 +40,8 @@ data Token = DATA
            | RPAREN
            | VAR EName
            | CON EName -- constructor
+           | LET
+           | DEFINE
            deriving(Eq, Show)
 
 scanTokens = alexScanTokens

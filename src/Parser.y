@@ -20,12 +20,15 @@ import Lexer
     ']'      { RBRACKET }
     '('      { LPAREN }
     ')'      { RPAREN }
+    let      { LET }
+    define   { DEFINE }
     VAR      { VAR $$ }
 
 %%
 
 Expr : '(' defun VAR '[' Args ']' Forms ')'        { EDestructLetBinding (IdPattern $3) $5 $7 }
      | '(' data con SimpleArgs VConstructors ')'   { mkDataDeclExpr (ETConstructor $3 $4 $5) }
+     | '(' define VAR Forms ')'                    { EDestructLetBinding (IdPattern $3) [] $4 }
      | Form                                        { $1 }
 
 SimpleArgs : {- empty -}                           { [] }
