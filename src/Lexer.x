@@ -10,21 +10,21 @@ $letter = [a-zA-Z]
 $eol = [\n]
 
 tokens :-
-       $eol         ;
-       $white+      ;
-       ";;".*       ; --comments
-       "{-".*"-}"   ; --multicomments
-       "data"       { \_ -> DATA }
-       "match"      { \_ -> MATCH }
-       "ƒ"          { \_ -> DEFUN }
-       "λ"          { \_ -> LAMBDA }
-       "⇒"          { \_ -> ARROW }
-       "["          { \_ -> LBRACKET }
-       "]"          { \_ -> RBRACKET }
-       "("          { \_ -> LPAREN }
-       ")"          { \_ -> RPAREN }
-       $capital $letter+ { \s -> VCON s }
-       $letter+     { \s -> VAR s }
+       $eol              ;
+       $white+           ;
+       ";;".*            ; --comments
+       "{-".*"-}"        ; --multicomments
+       "data"            { \_ -> DATA }
+       "match"           { \_ -> MATCH }
+       "ƒ"               { \_ -> DEFUN }
+       "λ"               { \_ -> LAMBDA }
+       "⇒"               { \_ -> ARROW }
+       "["               { \_ -> LBRACKET }
+       "]"               { \_ -> RBRACKET }
+       "("               { \_ -> LPAREN }
+       ")"               { \_ -> RPAREN }
+       $capital $letter+ { \s -> CON s }
+       $letter+          { \s -> VAR s }
 
 {
 data Token = DATA
@@ -37,7 +37,7 @@ data Token = DATA
            | LPAREN
            | RPAREN
            | VAR EName
-           | VCON EName -- value constructor
+           | CON EName -- constructor
            deriving(Eq, Show)
 
 scanTokens = alexScanTokens

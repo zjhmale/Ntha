@@ -30,6 +30,7 @@ data Expr = EVar EName
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EProgram [Expr]
+          | ETConstructor EName [EName] [EVConstructor]
           deriving (Eq, Ord)
 
 data TypeConstructor = TypeConstructor EName [Type]
@@ -50,6 +51,14 @@ data Pattern = WildcardPattern
 
 data Case = Case Pattern [Expr]
             deriving (Eq, Ord)
+
+-- temp structure for parser
+data EVConArg = EVCAVar EName
+              | EVCAOper EName [EName]
+              deriving (Show, Eq, Ord)
+
+data EVConstructor = EVConstructor EName [EVConArg]
+                     deriving (Show, Eq, Ord)
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"
@@ -104,6 +113,7 @@ reprOfExpr i e = case e of
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
                   ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ show body
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
+                  ETConstructor name args constructors -> "data " ++ name ++ " " ++ unwords args ++ " = " ++ intercalate " | " (map show constructors)
 
 instance Show Expr where
     showsPrec _ x = shows $ PP.text $ stringOfExpr x

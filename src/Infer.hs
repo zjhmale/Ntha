@@ -259,3 +259,4 @@ analyze term scope nonGeneric = case term of
                                     return (scope, resT')
                                   EProgram instructions -> do
                                     foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions
+                                  _ -> error $ "Unhandled expression in inference " ++ show term
