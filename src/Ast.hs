@@ -34,6 +34,7 @@ data Expr = EVar EName
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EProgram [Expr]
           | ETConstructor EName [EName] [EVConstructor]
+          | ENestLetBinding [Expr] [Expr]
           deriving (Eq, Ord)
 
 data TypeConstructor = TypeConstructor EName [Type]
@@ -82,7 +83,9 @@ mkDataDeclExpr (ETConstructor name args constructors) = unsafePerformIO $ do
     return $ EDataDecl name dataType vars constructors'
 mkDataDeclExpr e = e
 
---mkNestedLetBindings :: [Expr] -> [Expr]
+mkNestedLetBindings :: Expr -> Expr
+mkNestedLetBindings (ENestLetBinding bindings forms) = head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) forms bindings
+mkNestedLetBindings e = e
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"
@@ -138,6 +141,7 @@ reprOfExpr i e = case e of
                   ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
                   ETConstructor name args constructors -> "data " ++ name ++ " " ++ unwords args ++ " = " ++ intercalate " | " (map show constructors)
+                  ENestLetBinding bindings forms -> "nested let " ++ unwords (map show bindings) ++ " in " ++ unwords (map show forms)
 
 instance Show Expr where
     showsPrec _ x = shows $ PP.text $ stringOfExpr x

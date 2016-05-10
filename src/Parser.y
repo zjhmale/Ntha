@@ -55,14 +55,14 @@ Args : {- empty -}                                 { [] }
 Nameds : {- empty -}                               { [] }
        | VAR Nameds                                { (Named $1 Nothing) : $2 }
 
-binding : VAR Form                                 { ELetBinding (IdPattern $1) $2 [EUnit] }
+binding : VAR Form                                 { ELetBinding (IdPattern $1) $2 [] }
 
 bindings : binding                                 { [$1] }
          | binding bindings                        { $1 : $2 }
 
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
      | '(' lambda Nameds arrow Forms ')'           { ELambda $3 Nothing $5 }
-     -- | '(' let '[' bindings ']' Forms ')'          {  }
+     | '(' let '[' bindings ']' Forms ')'          { mkNestedLetBindings (ENestLetBinding $4 $6) }
      | '(' Form Form Form ')'                      { EApp (EApp $2 $3) $4 }
      | '[' Atoms ']'                               { EList $2 }
      | Atom                                        { $1 }
