@@ -2,7 +2,12 @@
 module Parser where
 
 import Ast
+import Type
 import Lexer
+import Control.Monad
+import Data.Maybe (fromMaybe)
+import qualified Data.Map as M
+import System.IO.Unsafe (unsafePerformIO)
 }
 
 %name expr
@@ -40,7 +45,20 @@ Exprs : Expr                                       { [$1] }
       | Expr Exprs                                 { $1 : $2 }
 
 Expr : '(' defun VAR '[' Args ']' FormsPlus ')'    { EDestructLetBinding (IdPattern $3) $5 $7 }
-     | '(' data con SimpleArgs VConstructors ')'   { mkDataDeclExpr (ETConstructor $3 $4 $5) }
+     | '(' data con SimpleArgs VConstructors ')'   { unsafePerformIO $ do
+                                                         (env, vars) <- foldM (\(env, vars) arg -> do
+                                                                                var <- makeVariable
+                                                                                return (M.insert arg var env, vars ++ [var]))
+                                                                        (M.empty, []) $4
+                                                         let dataType = TOper $3 vars
+                                                         let constructors' = map (\(EVConstructor cname cargs) -> let cargs' = map (\arg -> case arg of
+                                                                                                                                            EVCAVar aname -> readEnv env aname
+                                                                                                                                            EVCAOper aname operArgs -> TOper aname $ map (readEnv env) operArgs)
+                                                                                                                                  cargs
+                                                                                                                                  where readEnv scope n = fromMaybe unitT $ M.lookup n scope
+                                                                                                                 in TypeConstructor cname cargs')
+                                                                                 $5
+                                                         return $ EDataDecl $3 dataType vars constructors' }
      | '(' let VAR FormsPlus ')'                   { EDestructLetBinding (IdPattern $3) [] $4 }
      | Form                                        { $1 }
 
@@ -72,9 +90,9 @@ bindings : binding                                 { [$1] }
 
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
      | '(' lambda Nameds arrow FormsPlus ')'       { ELambda $3 Nothing $5 }
-     | '(' let '[' bindings ']' FormsPlus ')'      { mkNestedLetBindings (ENestLetBinding $4 $6) }
+     | '(' let '[' bindings ']' FormsPlus ')'      { head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) $6 $4 }
      | '(' ListForms ')'                           { $2 }
-     | '(' Form FormsPlus ')'                      { mkNestedApplication (ENestApplication $2 $3) }
+     | '(' Form FormsPlus ')'                      { foldl (\oper param -> (EApp oper param)) $2 $3 }
      | '[' FormsStar ']'                           { EList $2 }
      | '<' FormsStar '>'                           { ETuple $2 }
      | Atom                                        { $1 }

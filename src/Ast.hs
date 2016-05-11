@@ -3,10 +3,7 @@
 module Ast where
 
 import Type
-import Data.Maybe (fromMaybe)
 import Data.List (intercalate)
-import System.IO.Unsafe (unsafePerformIO)
-import Control.Monad
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 
@@ -33,10 +30,6 @@ data Expr = EVar EName
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | EProgram [Expr]
-          -- temp structure
-          | ETConstructor EName [EName] [EVConstructor]
-          | ENestLetBinding [Expr] [Expr]
-          | ENestApplication Expr [Expr]
           deriving (Eq, Ord)
 
 data TypeConstructor = TypeConstructor EName [Type]
@@ -65,33 +58,6 @@ data EVConArg = EVCAVar EName
 
 data EVConstructor = EVConstructor EName [EVConArg]
                      deriving (Show, Eq, Ord)
-
-readEnv :: (M.Map EName Type) -> EName -> Type
-readEnv env name = fromMaybe unitT $ M.lookup name env
-
-mkDataDeclExpr :: Expr -> Expr
-mkDataDeclExpr (ETConstructor name args constructors) = unsafePerformIO $ do
-    (env, vars) <- foldM (\(env, vars) arg -> do
-                           var <- makeVariable
-                           return (M.insert arg var env, vars ++ [var]))
-                   (M.empty, []) args
-    let dataType = TOper name vars
-    let constructors' = map (\(EVConstructor cname cargs) -> let cargs' = map (\arg -> case arg of
-                                                                                       EVCAVar aname -> readEnv env aname
-                                                                                       EVCAOper aname operArgs -> TOper aname $ map (readEnv env) operArgs)
-                                                                             cargs
-                                                            in TypeConstructor cname cargs')
-                            constructors
-    return $ EDataDecl name dataType vars constructors'
-mkDataDeclExpr e = e
-
-mkNestedLetBindings :: Expr -> Expr
-mkNestedLetBindings (ENestLetBinding bindings forms) = head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) forms bindings
-mkNestedLetBindings e = e
-
-mkNestedApplication :: Expr -> Expr
-mkNestedApplication (ENestApplication operator params) = foldl (\oper param -> (EApp oper param)) operator params
-mkNestedApplication e = e
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"
@@ -146,9 +112,6 @@ reprOfExpr i e = case e of
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
                   ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
-                  ETConstructor name args constructors -> "data " ++ name ++ " " ++ unwords args ++ " = " ++ intercalate " | " (map show constructors)
-                  ENestLetBinding bindings forms -> "nested let " ++ unwords (map show bindings) ++ " in " ++ unwords (map show forms)
-                  ENestApplication operator params -> "nested application " ++ show operator ++ "(" ++ unwords (map show params) ++ ")"
 
 instance Show Expr where
     showsPrec _ x = shows $ PP.text $ stringOfExpr x

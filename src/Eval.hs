@@ -233,4 +233,3 @@ eval expr scope = case expr of
                                                                       else insert name fnV env
                     EProgram instrs -> foldl (\(env, _) instr -> eval instr env)
                                             (child scope, VUnit) instrs
-                    _ -> error $ "Unhandled expression in evaluation " ++ show expr
