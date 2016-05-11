@@ -34,6 +34,11 @@ import Lexer
 
 %%
 
+Program : Exprs                                    { EProgram $1 }
+
+Exprs : Expr                                       { [$1] }
+      | Expr Exprs                                 { $1 : $2 }
+
 Expr : '(' defun VAR '[' Args ']' FormsPlus ')'    { EDestructLetBinding (IdPattern $3) $5 $7 }
      | '(' data con SimpleArgs VConstructors ')'   { mkDataDeclExpr (ETConstructor $3 $4 $5) }
      | '(' let VAR FormsPlus ')'                   { EDestructLetBinding (IdPattern $3) [] $4 }
