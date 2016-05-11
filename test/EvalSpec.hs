@@ -56,6 +56,8 @@ spec = describe "evaluation test" $
           let fib1 = EApp (EVar "fib") $ ENum 1
           let fib5 = EApp (EVar "fib") $ ENum 5
           let fib6 = EApp (EVar "fib") $ ENum 6
+          let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
+          let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
           let cases = [(listData, Just VUnit),
                        (xs, Just $ Adt "Nil" []),
                        (ys, Just $ Adt "Cons" [VNum 5, Adt "Nil" []]),
@@ -75,5 +77,7 @@ spec = describe "evaluation test" $
                        (fib0, Just $ VNum 0),
                        (fib1, Just $ VNum 1),
                        (fib5, Just $ VNum 5),
-                       (fib6, Just $ VNum 8)]
+                       (fib6, Just $ VNum 8),
+                       (xb, Just $ VBool True),
+                       (d, Just $ VTuple [VTuple [VNum 4, VBool True], VTuple [cons (VChar 't') (cons (VChar 'e') (cons (VChar 's') (cons (VChar 't') nil))), VChar 'c', VNum 45]])]
           runEvalSpecCases cases

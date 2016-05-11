@@ -27,6 +27,8 @@ import Lexer
     OPERATOR { OPERATOR $$ }
     number   { NUMBER $$ }
     boolean  { BOOLEAN $$ }
+    string   { STRING $$ }
+    char     { CHAR $$ }
 
 %%
 
@@ -81,6 +83,8 @@ Cases : Case                                       { [$1] }
 
 Atom : boolean                                     { EBool $1 }
      | number                                      { ENum $1 }
+     | string                                      { EStr $1 }
+     | char                                        { EChar $1 }
      | VAR                                         { EVar $1 }
      | OPERATOR                                    { EVar $1 }
      | con                                         { EVar $1 }

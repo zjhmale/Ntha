@@ -33,4 +33,6 @@ spec = do
       parseExpr "(let res2 (id 3))" `shouldBe` EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
       parseExpr "(let res3 (id true))" `shouldBe` EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
       parseExpr "(let [id (λx ⇒ x)] <(id 3) (id true)>)" `shouldBe` ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [(ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])]
+      parseExpr "(let x true)" `shouldBe` EDestructLetBinding (IdPattern "x") [] [EBool True]
+      parseExpr "(let d <<4 true> <\"test\" 'c' 45>>)" `shouldBe` EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
       parseExpr "(+ 1 2 3)" `shouldBe` EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)

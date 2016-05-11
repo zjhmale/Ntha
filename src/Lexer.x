@@ -34,6 +34,8 @@ tokens :-
        "true" | "false"  { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $upper $chars*    { \s -> CON s }
        $lower $chars*    { \s -> VAR s }
+       \"[^\"]*\"        { \s -> STRING ((tail . init) s) }
+       '[^'\"]{1}'       { \s -> CHAR ((head . tail . init) s) }
        $operator         { \s -> OPERATOR s }
        $digit+           { \s -> NUMBER (read s) }
 
@@ -55,6 +57,8 @@ data Token = DATA
            | OPERATOR String
            | BOOLEAN Bool
            | NUMBER Int
+           | STRING String
+           | CHAR Char
            deriving(Eq, Show)
 
 scanTokens = alexScanTokens
