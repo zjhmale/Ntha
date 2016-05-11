@@ -41,4 +41,14 @@ spec = do
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
       parseExpr "(let x (penultimate [[\"g\"] [\"c\"]]))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "x") [] [EApp (EVar "penultimate") (EList [EList [EStr "g"], EList [EStr "c"]])]]
+      parseExpr "(let y [1 2 3])" `shouldBe` EProgram [EDestructLetBinding (IdPattern "y") [] [EList [ENum 1, ENum 2, ENum 3]]]
+      parseExpr "(let z [])" `shouldBe` EProgram [EDestructLetBinding (IdPattern "z") [] [EList []]]
+      parseExpr "(ƒ comp [f g x] (f (g x)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "comp") [IdPattern "f", IdPattern "g", IdPattern "x"] [EApp (EVar "f") (EApp (EVar "g") (EVar "x"))]]
+      parseExpr "(let fix (comp inc dec))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "fix") [] [EApp (EApp (EVar "comp") $ EVar "inc") (EVar "dec")]]
+      parseExpr "(let incdec (fix 5))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "incdec") [] [EApp (EVar "fix") (ENum 5)]]
+      parseExpr "(let a 'a')" `shouldBe` EProgram [EDestructLetBinding (IdPattern "a") [] [EChar 'a']]
+      parseExpr "(let s \"qdsfsdf\")" `shouldBe` EProgram [EDestructLetBinding (IdPattern "s") [] [EStr "qdsfsdf"]]
+      parseExpr "(ƒ len2 [xs] (match xs ([] => 0) (_ :: t => (+ 1 (len2 t)))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "len2") [IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [ENum 0],
+                                                                                                                                                                                          Case (TConPattern "Cons" [WildcardPattern, IdPattern "t"]) [EApp (EApp (EVar "+") $ ENum 1) (EApp (EVar "len2") $ EVar "t")]]]]
+      parseExpr "(len2 y)" `shouldBe` EProgram [EApp (EVar "len2") $ EVar "y"]
       parseExpr "(+ 1 2 3)" `shouldBe` EProgram [EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)]

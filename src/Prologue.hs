@@ -22,8 +22,12 @@ assumptions = do
   return $ TypeScope Nothing $ M.fromList [("+", functionT [intT, intT] intT),
                                            ("-", functionT [intT, intT] intT),
                                            ("Cons", mkTCon consConstructor listData),
-                                           ("Nil", mkTCon nilConstructor listData)]
+                                           ("Nil", mkTCon nilConstructor listData),
+                                           ("inc", functionT [intT] intT),
+                                           ("dec", functionT [intT] intT)]
 
 builtins :: ValueScope
 builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (VNum $ a + b))),
-                                            ("-", binFn (\(VNum a) (VNum b) -> (VNum $ a - b)))]
+                                            ("-", binFn (\(VNum a) (VNum b) -> (VNum $ a - b))),
+                                            ("inc", Fn (\(VNum n) _ -> VNum $ n + 1)),
+                                            ("dec", Fn (\(VNum n) _ -> VNum $ n - 1))]

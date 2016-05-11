@@ -99,8 +99,8 @@ Pattern : '_'                                      { WildcardPattern }
 Patterns : Pattern                                 { [$1] }
          | Pattern Patterns                        { $1 : $2 }
 
-ListPatterns : VAR '::' VAR                        { TConPattern "Cons" [IdPattern $1, IdPattern $3] }
-             | VAR '::' ListPatterns               { TConPattern "Cons" [IdPattern $1, $3] }
+ListPatterns : Pattern '::' Pattern                { TConPattern "Cons" [$1, $3] }
+             | Pattern '::' ListPatterns           { TConPattern "Cons" [$1, $3] }
 
 Case : '(' Pattern arrow FormsPlus ')'             { Case $2 $4 }
 
