@@ -6,11 +6,13 @@ import Data.Char (toUpper)
 
 %wrapper "basic"
 
-$capital = [A-Z]
-$letter = [a-zA-Z]
+$upper = [A-Z]
+$lower = [a-z]
+$digit = [0-9]
+$letter = [$lower $upper]
+$chars = [$lower $upper $digit]
 $eol = [\n]
 $operator = [\+\-\*\/]
-$digit = 0-9
 
 tokens :-
        $eol              ;
@@ -30,8 +32,8 @@ tokens :-
        ">"               { \_ -> RANGLEBRACKET }
        "let"             { \_ -> LET }
        "true" | "false"  { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
-       $capital $letter+ { \s -> CON s }
-       $letter+          { \s -> VAR s }
+       $upper $chars*    { \s -> CON s }
+       $lower $chars*    { \s -> VAR s }
        $operator         { \s -> OPERATOR s }
        $digit+           { \s -> NUMBER (read s) }
 
