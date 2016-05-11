@@ -5,7 +5,10 @@ module Type where
 import State
 import Data.IORef
 import Data.List (intercalate)
+import Control.Monad (foldM)
+import Data.Maybe (fromMaybe)
 import qualified Data.Map as M
+import qualified Data.Set as S
 import qualified Text.PrettyPrint as PP
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -47,48 +50,73 @@ strT = listT charT
 unitT :: Type
 unitT = TOper "()" []
 
-stringOfType :: Type -> Infer String
-stringOfType (TVar _ inst name) = do
+stringOfType :: M.Map TName TName -> Type -> Infer String
+stringOfType subrule (TVar _ inst name) = do
   instV <- readIORef inst
   case instV of
-    Just inst' -> stringOfType inst'
-    Nothing -> return name
-stringOfType (TOper name args) = case name of
-                                  "*" -> do
-                                    argsStr <- (intercalate " * ") <$> mapM stringOfType args
-                                    return $ "(" ++ argsStr ++ ")"
-                                  "List" -> do
-                                    argStr <- stringOfType $ args!!0
-                                    return $ "[" ++ argStr ++ "]"
-                                  "→" -> do
-                                    let argT = args!!0
-                                    let rtnT = args!!1
-                                    argStr <- stringOfType argT
-                                    rtnStr <- stringOfType rtnT
-                                    let adjust t s = case t of
-                                                      TOper "→" _ -> "(" ++ s ++ ")"
-                                                      _ -> s
-                                    let argStr' = adjust argT argStr
-                                    let rtnStr' = adjust rtnT rtnStr
-                                    return $ argStr' ++ " → " ++ rtnStr'
-                                  _ -> if (length args) == 0
-                                      then return name
-                                      else do
-                                        argsStr <- unwords <$> mapM stringOfType args
-                                        return $ "(" ++ name ++ ":" ++ argsStr ++ ")"
-stringOfType (TRecord pairs) = do
-  pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> (k ++) <$> stringOfType v) $ M.toList pairs)
+    Just inst' -> stringOfType subrule inst'
+    Nothing -> return $ fromMaybe "α" $ M.lookup name subrule
+stringOfType subrule (TOper name args) = case name of
+                                           "*" -> do
+                                             argsStr <- (intercalate " * ") <$> mapM (stringOfType subrule) args
+                                             return $ "(" ++ argsStr ++ ")"
+                                           "List" -> do
+                                             argStr <- stringOfType subrule $ args!!0
+                                             return $ "[" ++ argStr ++ "]"
+                                           "→" -> do
+                                             let argT = args!!0
+                                             let rtnT = args!!1
+                                             argStr <- stringOfType subrule argT
+                                             rtnStr <- stringOfType subrule rtnT
+                                             let adjust t s = case t of
+                                                               TOper "→" _ -> "(" ++ s ++ ")"
+                                                               _ -> s
+                                             let argStr' = adjust argT argStr
+                                             let rtnStr' = adjust rtnT rtnStr
+                                             return $ argStr' ++ " → " ++ rtnStr'
+                                           _ -> if (length args) == 0
+                                               then return name
+                                               else do
+                                                 argsStr <- unwords <$> mapM (stringOfType subrule) args
+                                                 return $ "(" ++ name ++ ":" ++ argsStr ++ ")"
+stringOfType subrule (TRecord pairs) = do
+  pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> (k ++) <$> stringOfType subrule v) $ M.toList pairs)
   return $ "{" ++ pairsStr ++ "}"
-stringOfType (TCon name types dataType) = do
-  dataTypeStr <- stringOfType dataType
+stringOfType subrule (TCon name types dataType) = do
+  dataTypeStr <- stringOfType subrule dataType
   case types of
     [] -> return dataTypeStr
     _ -> do
-      typesStr <- (intercalate ", ") <$> mapM stringOfType types
+      typesStr <- (intercalate ", ") <$> mapM (stringOfType subrule) types
       return $ "(" ++ name ++ " " ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
 
+getFreeVars :: Type -> Infer (S.Set TName)
+getFreeVars (TVar _ inst name) = do
+  instV <- readIORef inst
+  case instV of
+    Just inst' -> getFreeVars inst'
+    Nothing -> return $ S.singleton name
+getFreeVars (TOper _ args) = foldM (\acc arg -> do
+                                     freeVars <- getFreeVars arg
+                                     return $ S.union freeVars acc)
+                                   S.empty args
+getFreeVars (TRecord pairs) = foldM (\acc (_, v) -> do
+                                      freeVars <- getFreeVars v
+                                      return $ S.union freeVars acc)
+                                    S.empty $ M.toList pairs
+getFreeVars (TCon _ types dataType) = foldM (\acc t -> do
+                                              freeVars <- getFreeVars t
+                                              return $ S.union freeVars acc)
+                                            S.empty $ types ++ [dataType]
+
+normalize :: Type -> Infer String
+normalize t = do
+  freeVars <- getFreeVars t
+  let subrule = M.map (\c -> [c]) $ M.fromList $ zip (S.toList freeVars) ['α'..'λ']
+  stringOfType subrule t
+
 instance Show Type where
-    showsPrec _ x = shows $ PP.text $ unsafePerformIO $ stringOfType x
+    showsPrec _ x = shows $ PP.text $ unsafePerformIO $ normalize x
 
 instance Eq Type where
   TVar id1 inst1 vname1 == TVar id2 inst2 vname2 = id1 == id2 && instV1 == instV2 && vname1 == vname2 where

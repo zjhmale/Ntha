@@ -68,11 +68,14 @@ spec = describe "inference test" $
           let idpair = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [(ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])]
           let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
-          -- show up type variables need to be normalized
+          let penultimate = EProgram [EDestructLetBinding (IdPattern "penultimate") [IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [ENum 0],
+                                                                                                                                    Case (TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]) [ENum 0],
+                                                                                                                                    Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
+                                                                                                                                    Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
           let cases = [(listData, "[α]"),
-                       (xs, "[γ]"),
+                       (xs, "[α]"),
                        (ys, "[Number]"),
-                       (len, "[μ] → Number"),
+                       (len, "[α] → Number"),
                        (xy, "(Number * Number)"),
                        (zs, "[Number]"),
                        (z, "Number"),
@@ -80,12 +83,14 @@ spec = describe "inference test" $
                        (res0, "Number"),
                        (f, "Number → (Number → (Number → Number))"),
                        (res1, "Number"),
-                       (id, "η → η"),
+                       (id, "α → α"),
                        (res2, "Number"),
                        (res3, "Boolean"),
                        (idpair, "(Number * Boolean)"),
                        (fib, "Number → Number"),
                        (xb, "Boolean"),
-                       (d, "((Number * Boolean) * ([Char] * Char * Number))")]
+                       (d, "((Number * Boolean) * ([Char] * Char * Number))"),
+                       (penultimate, "[Number] → Number")]
           runInferSpecCases cases
           failInferSpecCase ff "Type mismatch Boolean ≠ Number"
+
