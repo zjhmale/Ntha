@@ -13,6 +13,7 @@ mkTCon (TypeConstructor name types) (EDataDecl _ t _ _) = TCon name types t
 assumptions :: Infer TypeScope
 assumptions = do
   tvarA <- makeVariable
+  tvarB <- makeVariable
   let name = "List"
   let vars = [tvarA]
   let dataType = TOper name vars
@@ -21,6 +22,8 @@ assumptions = do
   let listData = EDataDecl "List" dataType vars [consConstructor, nilConstructor]
   return $ TypeScope Nothing $ M.fromList [("+", functionT [intT, intT] intT),
                                            ("-", functionT [intT, intT] intT),
+                                           ("%", functionT [intT, intT] intT),
+                                           ("=", functionT [tvarB, tvarB] intT),
                                            ("Cons", mkTCon consConstructor listData),
                                            ("Nil", mkTCon nilConstructor listData),
                                            ("inc", functionT [intT] intT),
@@ -29,6 +32,8 @@ assumptions = do
 builtins :: ValueScope
 builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (VNum $ a + b))),
                                             ("-", binFn (\(VNum a) (VNum b) -> (VNum $ a - b))),
+                                            ("%", binFn (\(VNum a) (VNum b) -> (VNum $ a `mod` b))),
+                                            ("=", binFn (\a b -> VBool $ a == b)),
                                             ("Cons", binFn (\a b -> cons a b)),
                                             ("Nil", nil),
                                             ("inc", Fn (\(VNum n) _ -> VNum $ n + 1)),

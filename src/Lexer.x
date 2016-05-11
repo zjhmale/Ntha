@@ -12,7 +12,7 @@ $digit = [0-9]
 $letter = [$lower $upper]
 $chars = [$lower $upper $digit]
 $eol = [\n]
-$operator = [\+\-\*\/]
+$operator = [\+\-\*\/\%\=]
 
 tokens :-
        $eol              ;
@@ -21,8 +21,8 @@ tokens :-
        "{-".*"-}"        ; --multicomments
        "data"            { \_ -> DATA }
        "match"           { \_ -> MATCH }
-       "ƒ"               { \_ -> DEFUN }
-       "λ"               { \_ -> LAMBDA }
+       "ƒ" | "fun"       { \_ -> DEFUN }
+       "λ" | "lambda"    { \_ -> LAMBDA }
        "⇒" | "=>"        { \_ -> ARROW }
        "["               { \_ -> LBRACKET }
        "]"               { \_ -> RBRACKET }
