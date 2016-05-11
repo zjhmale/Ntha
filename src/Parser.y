@@ -22,6 +22,8 @@ import Lexer
     ')'      { RPAREN }
     '<'      { LANGLEBRACKET }
     '>'      { RANGLEBRACKET }
+    '_'      { WILDCARD }
+    '::'     { DOUBLECOLON }
     let      { LET }
     VAR      { VAR $$ }
     OPERATOR { OPERATOR $$ }
@@ -32,9 +34,9 @@ import Lexer
 
 %%
 
-Expr : '(' defun VAR '[' Args ']' Forms ')'        { EDestructLetBinding (IdPattern $3) $5 $7 }
+Expr : '(' defun VAR '[' Args ']' FormsPlus ')'    { EDestructLetBinding (IdPattern $3) $5 $7 }
      | '(' data con SimpleArgs VConstructors ')'   { mkDataDeclExpr (ETConstructor $3 $4 $5) }
-     | '(' let VAR Forms ')'                       { EDestructLetBinding (IdPattern $3) [] $4 }
+     | '(' let VAR FormsPlus ')'                   { EDestructLetBinding (IdPattern $3) [] $4 }
      | Form                                        { $1 }
 
 SimpleArgs : {- empty -}                           { [] }
@@ -64,19 +66,38 @@ bindings : binding                                 { [$1] }
          | binding bindings                        { $1 : $2 }
 
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
-     | '(' lambda Nameds arrow Forms ')'           { ELambda $3 Nothing $5 }
-     | '(' let '[' bindings ']' Forms ')'          { mkNestedLetBindings (ENestLetBinding $4 $6) }
-     | '(' Form Forms ')'                          { mkNestedApplication (ENestApplication $2 $3) }
-     | '[' Forms ']'                               { EList $2 }
-     | '<' Forms '>'                               { ETuple $2 }
+     | '(' lambda Nameds arrow FormsPlus ')'       { ELambda $3 Nothing $5 }
+     | '(' let '[' bindings ']' FormsPlus ')'      { mkNestedLetBindings (ENestLetBinding $4 $6) }
+     | '(' Form FormsPlus ')'                      { mkNestedApplication (ENestApplication $2 $3) }
+     | '[' FormsStar ']'                           { EList $2 }
+     | '<' FormsStar '>'                           { ETuple $2 }
      | Atom                                        { $1 }
 
-Forms : Form                                       { [$1] }
-      | Form Forms                                 { $1 : $2 }
+FormsPlus : Form                                   { [$1] }
+          | Form FormsPlus                         { $1 : $2 }
 
-Pattern : con Args                                 { TConPattern $1 $2 }
+FormsStar : {- empty -}                            { [] }
+          | Form FormsStar                         { $1 : $2 }
 
-Case : '(' Pattern arrow Forms ')'                 { Case $2 $4 }
+Pattern : '_'                                      { WildcardPattern }
+        | VAR                                      { IdPattern $1 }
+        | number                                   { NumPattern $1 }
+        | boolean                                  { BoolPattern $1 }
+        | char                                     { CharPattern $1 }
+        | string                                   { StrPattern $1 }
+        | con Args                                 { TConPattern $1 $2 }
+        | '<' Patterns '>'                         { TuplePattern $2 }
+        | '[' ']'                                  { TConPattern "Nil" [] }
+        | '[' Patterns ']'                         { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) $2 }
+        | ListPatterns                             { $1 }
+
+Patterns : Pattern                                 { [$1] }
+         | Pattern Patterns                        { $1 : $2 }
+
+ListPatterns : VAR '::' VAR                        { TConPattern "Cons" [IdPattern $1, IdPattern $3] }
+             | VAR '::' ListPatterns               { TConPattern "Cons" [IdPattern $1, $3] }
+
+Case : '(' Pattern arrow FormsPlus ')'             { Case $2 $4 }
 
 Cases : Case                                       { [$1] }
       | Case Cases                                 { $1 : $2 }

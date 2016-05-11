@@ -23,13 +23,15 @@ tokens :-
        "match"           { \_ -> MATCH }
        "ƒ"               { \_ -> DEFUN }
        "λ"               { \_ -> LAMBDA }
-       "⇒"               { \_ -> ARROW }
+       "⇒" | "=>"        { \_ -> ARROW }
        "["               { \_ -> LBRACKET }
        "]"               { \_ -> RBRACKET }
        "("               { \_ -> LPAREN }
        ")"               { \_ -> RPAREN }
        "<"               { \_ -> LANGLEBRACKET }
        ">"               { \_ -> RANGLEBRACKET }
+       "_"               { \_ -> WILDCARD }
+       "∷" | "::"        { \_ -> DOUBLECOLON }
        "let"             { \_ -> LET }
        "true" | "false"  { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $upper $chars*    { \s -> CON s }
@@ -51,6 +53,8 @@ data Token = DATA
            | RPAREN
            | LANGLEBRACKET
            | RANGLEBRACKET
+           | WILDCARD
+           | DOUBLECOLON
            | VAR EName
            | CON EName -- constructor
            | LET

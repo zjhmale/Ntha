@@ -35,4 +35,5 @@ spec = do
       parseExpr "(let [id (λx ⇒ x)] <(id 3) (id true)>)" `shouldBe` ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [(ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])]
       parseExpr "(let x true)" `shouldBe` EDestructLetBinding (IdPattern "x") [] [EBool True]
       parseExpr "(let d <<4 true> <\"test\" 'c' 45>>)" `shouldBe` EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
+      parseExpr "(ƒ fib [x]\n (match x\n (0 => 0)\n (1 => 1)\n (_ => (+ (fib (- x 1)) (fib (- x 2))))))" `shouldBe` EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0], Case (NumPattern 1) [ENum 1], Case WildcardPattern [EApp (EApp (EVar "+") (EApp (EVar "fib") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 1)) $ EApp (EVar "fib") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 2]]]
       parseExpr "(+ 1 2 3)" `shouldBe` EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)
