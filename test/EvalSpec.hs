@@ -58,6 +58,12 @@ spec = describe "evaluation test" $
           let fib6 = EApp (EVar "fib") $ ENum 6
           let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
+          let penultimate = EProgram [EDestructLetBinding (IdPattern "penultimate") [IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [ENum 0],
+                                                                                                                                    Case (TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]) [ENum 0],
+                                                                                                                                    Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
+                                                                                                                                    Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
+          let res7 = EDestructLetBinding (IdPattern "res7") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
+          let res8 = EDestructLetBinding (IdPattern "res7") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3, ENum 4])]
           let cases = [(listData, Just VUnit),
                        (xs, Just $ Adt "Nil" []),
                        (ys, Just $ Adt "Cons" [VNum 5, Adt "Nil" []]),
@@ -79,5 +85,8 @@ spec = describe "evaluation test" $
                        (fib5, Just $ VNum 5),
                        (fib6, Just $ VNum 8),
                        (xb, Just $ VBool True),
-                       (d, Just $ VTuple [VTuple [VNum 4, VBool True], VTuple [cons (VChar 't') (cons (VChar 'e') (cons (VChar 's') (cons (VChar 't') nil))), VChar 'c', VNum 45]])]
+                       (d, Just $ VTuple [VTuple [VNum 4, VBool True], VTuple [cons (VChar 't') (cons (VChar 'e') (cons (VChar 's') (cons (VChar 't') nil))), VChar 'c', VNum 45]]),
+                       (penultimate, Nothing),
+                       (res7, Just $ VNum 0),
+                       (res8, Just $ VNum 3)]
           runEvalSpecCases cases

@@ -72,6 +72,7 @@ spec = describe "inference test" $
                                                                                                                                     Case (TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]) [ENum 0],
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
+          let res4 = EDestructLetBinding (IdPattern "res4") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
           let cases = [(listData, "[α]"),
                        (xs, "[α]"),
                        (ys, "[Number]"),
@@ -90,7 +91,8 @@ spec = describe "inference test" $
                        (fib, "Number → Number"),
                        (xb, "Boolean"),
                        (d, "((Number * Boolean) * ([Char] * Char * Number))"),
-                       (penultimate, "[Number] → Number")]
+                       (penultimate, "[Number] → Number"),
+                       (res4, "Number")]
           runInferSpecCases cases
           failInferSpecCase ff "Type mismatch Boolean ≠ Number"
 
