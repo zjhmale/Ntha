@@ -73,10 +73,14 @@ bindings : binding                                 { [$1] }
 Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
      | '(' lambda Nameds arrow FormsPlus ')'       { ELambda $3 Nothing $5 }
      | '(' let '[' bindings ']' FormsPlus ')'      { mkNestedLetBindings (ENestLetBinding $4 $6) }
+     | '(' ListForms ')'                           { $2 }
      | '(' Form FormsPlus ')'                      { mkNestedApplication (ENestApplication $2 $3) }
      | '[' FormsStar ']'                           { EList $2 }
      | '<' FormsStar '>'                           { ETuple $2 }
      | Atom                                        { $1 }
+
+ListForms : Form '::' Form                         { EApp (EApp (EVar "Cons") $1) $3 }
+          | Form '::' ListForms                    { EApp (EApp (EVar "Cons") $1) $3 }
 
 FormsPlus : Form                                   { [$1] }
           | Form FormsPlus                         { $1 : $2 }

@@ -51,4 +51,7 @@ spec = do
       parseExpr "(ƒ len2 [xs] (match xs ([] => 0) (_ :: t => (+ 1 (len2 t)))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "len2") [IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [ENum 0],
                                                                                                                                                                                           Case (TConPattern "Cons" [WildcardPattern, IdPattern "t"]) [EApp (EApp (EVar "+") $ ENum 1) (EApp (EVar "len2") $ EVar "t")]]]]
       parseExpr "(len2 y)" `shouldBe` EProgram [EApp (EVar "len2") $ EVar "y"]
+      parseExpr "(ƒ append [x xs] (x :: xs))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "append") [IdPattern "x", IdPattern "xs"] [EApp (EApp (EVar "Cons") $ EVar "x") $ EVar "xs"]]
+      parseExpr "(let l (1 :: 2 :: 3 :: Nil))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]]
+      parseExpr "(let l2 (append 0 l))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l2") [] [EApp (EApp (EVar "append") $ ENum 0) $ EVar "l"]]
       parseExpr "(+ 1 2 3)" `shouldBe` EProgram [EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)]
