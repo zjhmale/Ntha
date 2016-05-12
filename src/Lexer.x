@@ -29,8 +29,11 @@ tokens :-
        "]"                         { \_ -> RBRACKET }
        "("                         { \_ -> LPAREN }
        ")"                         { \_ -> RPAREN }
+       "{"                         { \_ -> LBRACE }
+       "}"                         { \_ -> RBRACE }
        "_"                         { \_ -> WILDCARD }
        "."                         { \_ -> DOT }
+       ":" $chars+                 { \s -> KEYWORD (tail s) }
        "∷" | "::"                  { \_ -> DOUBLECOLON }
        "let"                       { \_ -> LET }
        "true" | "false"            { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
@@ -52,12 +55,15 @@ data Token = DATA
            | RBRACKET
            | LPAREN
            | RPAREN
+           | LBRACE
+           | RBRACE
            | WILDCARD
            | DOT
            | DOUBLECOLON
            | VAR EName
            | CON EName -- constructor
            | LET
+           | KEYWORD String
            | OPERATOR String
            | BOOLEAN Bool
            | NUMBER Int

@@ -26,10 +26,13 @@ import System.IO.Unsafe (unsafePerformIO)
     ']'      { RBRACKET }
     '('      { LPAREN }
     ')'      { RPAREN }
+    '{'      { LBRACE }
+    '}'      { RBRACE }
     '_'      { WILDCARD }
     '.'      { DOT }
     '::'     { DOUBLECOLON }
     let      { LET }
+    keyword  { KEYWORD $$ }
     VAR      { VAR $$ }
     OPERATOR { OPERATOR $$ }
     number   { NUMBER $$ }
@@ -97,7 +100,12 @@ Form : '(' match Form Cases ')'                    { EPatternMatching $3 $4 }
      | '(' TupleFroms ')'                          { ETuple $2 }
      | '(' Form FormsPlus ')'                      { foldl (\oper param -> (EApp oper param)) $2 $3 }
      | '[' FormsStar ']'                           { EList $2 }
+     | '{' RecordForms '}'                         { ERecord $2 }
+     | '(' keyword Form ')'                        { EAccessor $3 $2 }
      | Atom                                        { $1 }
+
+RecordForms : keyword Form                         { M.singleton $1 $2 }
+            | RecordForms keyword Form             { M.insert $2 $3 $1 }
 
 ListForms : Form '::' Form                         { EApp (EApp (EVar "Cons") $1) $3 }
           | Form '::' ListForms                    { EApp (EApp (EVar "Cons") $1) $3 }

@@ -4,6 +4,7 @@ import Ast
 import Type
 import State
 import Parser
+import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 import Test.Hspec
 
@@ -87,3 +88,5 @@ spec = do
       parseExpr "(let result (eval sym))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "result") [] [EApp (EVar "eval") $ EVar "sym"]]
       parseExpr "(ƒ fact [n] (if (≤ n 1) 1 (* n (fact (- n 1)))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "fact") [IdPattern "n"] [EIf (EApp (EApp (EVar "≤") $ EVar "n") $ ENum 1) [ENum 1] [EApp (EApp (EVar "*") $ EVar "n") (EApp (EVar "fact") $ EApp (EApp (EVar "-") $ EVar "n") $ ENum 1)]]]
       parseExpr "(let f5 (fact 5))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f5") [] [EApp (EVar "fact") $ ENum 5]]
+      parseExpr "(let profile {:name \"ntha\" :age 12})" `shouldBe` EProgram [EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]]
+      parseExpr "(:name profile)" `shouldBe` EProgram [EAccessor (EVar "profile") "name"]
