@@ -4,11 +4,11 @@
 
 (ƒ eval [n]
   (match n
-    ((Num a) => a)
-    ((Add a b) => (+ (eval a) (eval b)))
-    ((Sub a b) => (- (eval a) (eval b)))
-    ((Mul a b) => (* (eval a) (eval b)))
-    ((Div a b) => (/ (eval a) (eval b)))))
+    ((Num a) ⇒ a)
+    ((Add a b) ⇒ (+ (eval a) (eval b)))
+    ((Sub a b) ⇒ (- (eval a) (eval b)))
+    ((Mul a b) ⇒ (* (eval a) (eval b)))
+    ((Div a b) ⇒ (/ (eval a) (eval b)))))
 
 (let sym (Mul (Add (Num 4) (Num 3)) (Sub (Num 4) (Num 1))))
 
@@ -23,25 +23,25 @@
 
 (ƒ eval [e]
   (match e
-    ((Num n) => n)
-    ((App o e1 e2) =>
+    ((Num n) ⇒ n)
+    ((App o e1 e2) ⇒
       (match o
-        (Add => (+ (eval e1) (eval e2)))
-        (Sub => (- (eval e1) (eval e2)))))))
+        (Add ⇒ (+ (eval e1) (eval e2)))
+        (Sub ⇒ (- (eval e1) (eval e2)))))))
 
 (let av (eval a))
 
 (ƒ eval [e]
   (match e
-    ((Num n) => n)
-    ((App Add e1 e2) => (+ (eval e1) (eval e2)))
-    ((App Sub e1 e2) => (- (eval e1) (eval e2)))))
+    ((Num n) ⇒ n)
+    ((App Add e1 e2) ⇒ (+ (eval e1) (eval e2)))
+    ((App Sub e1 e2) ⇒ (- (eval e1) (eval e2)))))
 
 (let av (eval a))
 
 (ƒ simplify [e]
   (match e
-    ((App Add (Num n) e2) => (if (= n 0) e2 e))))
+    ((App Add (Num n) e2) ⇒ (if (= n 0) e2 e))))
 
 (let a (App Add (Num 0) (Num 6)))
 (let b (simplify a))
