@@ -79,9 +79,6 @@ spec = do
       parseExpr "(ƒ simplify [e] (match e ((App Add (Num n) e2) => (if (= n 0) e2 e))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "simplify") [IdPattern "e"] [EPatternMatching (EVar "e") [Case (TConPattern "App" [TConPattern "Add" [], TConPattern "Num" [IdPattern "n"], IdPattern "e2"]) [EIf (EApp (EApp (EVar "=") $ EVar "n") $ ENum 0) [EVar "e2"] [EVar "e"]]]]]
       parseExpr "(let a (App Add (Num 0) (Num 6)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "a") [] [EApp (EApp (EApp (EVar "App") $ EVar "Add") $ EApp (EVar "Num") $ ENum 0) $ EApp (EVar "Num") $ ENum 6]]
       parseExpr "(let b (simplify a))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "b") [] [EApp (EVar "simplify") $ EVar "a"]]
-
-
-
     it "should parse lambda expressions even with type annotations" $ do
       parseExpr "(let g (λx y ⇒ (+ x y)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "g") [] [ELambda [Named "x" Nothing, Named "y" Nothing] Nothing [EApp (EApp (EVar "+") $ EVar "x") $ EVar "y"]]]
       parseExpr "(let res0 (g 3 3))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "res0") [] [EApp (EApp (EVar "g") $ ENum 3) $ ENum 3]]

@@ -30,9 +30,8 @@ failInferSpecCase expr error = do
     resetUniqueName
 
 spec :: Spec
-spec = describe "inference test" $
-        it "should inference type of given term" $ do
-          -- data List a = Cons a (List a) | Nil
+spec = describe "inference test" $ do
+        it "should infer type of ADT and pattern match expressions" $ do
           resetId
           resetUniqueName
           tvarA <- makeVariable
@@ -43,18 +42,20 @@ spec = describe "inference test" $
           let nilConstructor = TypeConstructor "Nil" []
           let listData = EDataDecl "List" dataType vars [consConstructor, nilConstructor]
           (PP.text . show $ listData) `shouldBe` PP.text "data List α = Cons α [α] | Nil"
-          let xs = EDestructLetBinding (IdPattern "xs") [] [(EVar "Nil")] -- let xs = Nil
-          let ys = EDestructLetBinding (IdPattern "ys") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EVar "Nil"] -- let ys = Cons 5 Nil
-          {-
-            let len l =
-              match l
-                Nil => 0
-                Cons h t => 1 + len t
-          -}
+          let xs = EDestructLetBinding (IdPattern "xs") [] [(EVar "Nil")]
+          let ys = EDestructLetBinding (IdPattern "ys") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EVar "Nil"]
           let len = EDestructLetBinding (IdPattern "len") [IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Nil" []) [ENum 0], Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "+") $ ENum 1) $ EApp (EVar "len") $ EVar "t"]]]
           let xy = EDestructLetBinding (IdPattern "xy") [] [ETuple [EApp (EVar "len") (EVar "xs"), EApp (EVar "len") (EVar"ys")]]
           let zs = EDestructLetBinding (IdPattern "zs") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EApp (EApp (EVar "Cons") $ ENum 4) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]
           let z = EDestructLetBinding (IdPattern "z") [] [EApp (EVar "len") $ EVar "zs"]
+          runInferSpecCases [(listData, "[α]"),
+                             (xs, "[α]"),
+                             (ys, "[Number]"),
+                             (len, "[α] → Number"),
+                             (xy, "(Number * Number)"),
+                             (zs, "[Number]"),
+                             (z, "Number")]
+        it "should infer type of lambda expressions even with type annotations" $ do
           let g = EDestructLetBinding (IdPattern "g") [] [ELambda [Named "x" Nothing, Named "y" Nothing] Nothing [EApp (EApp (EVar "+") $ EVar "x") $ EVar "y"]]
           let res0 = EDestructLetBinding (IdPattern "res0") [] [EApp (EApp (EVar "g") $ ENum 3) $ ENum 3]
           let f = EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
@@ -63,36 +64,31 @@ spec = describe "inference test" $
           let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
-          let fib = EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0], Case (NumPattern 1) [ENum 1], Case WildcardPattern [EApp (EApp (EVar "+") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 1) $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 2]]]
           -- let polymorphism here!!!
           let idpair = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [(ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])]
-          let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
-          let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
+          runInferSpecCases [(g, "Number → (Number → Number)"),
+                             (res0, "Number"),
+                             (f, "Number → (Number → (Number → Number))"),
+                             (res1, "Number"),
+                             (id, "α → α"),
+                             (res2, "Number"),
+                             (res3, "Boolean"),
+                             (idpair, "(Number * Boolean)")]
+          failInferSpecCase ff "Type mismatch Boolean ≠ Number"
+        it "should infer type of function definition, application and pattern match" $ do
+          let fib = EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0], Case (NumPattern 1) [ENum 1], Case WildcardPattern [EApp (EApp (EVar "+") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 1) $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 2]]]
           let penultimate = EProgram [EDestructLetBinding (IdPattern "penultimate") [IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [ENum 0],
                                                                                                                                     Case (TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]) [ENum 0],
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
           let res4 = EDestructLetBinding (IdPattern "res4") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
-          let cases = [(listData, "[α]"),
-                       (xs, "[α]"),
-                       (ys, "[Number]"),
-                       (len, "[α] → Number"),
-                       (xy, "(Number * Number)"),
-                       (zs, "[Number]"),
-                       (z, "Number"),
-                       (g, "Number → (Number → Number)"),
-                       (res0, "Number"),
-                       (f, "Number → (Number → (Number → Number))"),
-                       (res1, "Number"),
-                       (id, "α → α"),
-                       (res2, "Number"),
-                       (res3, "Boolean"),
-                       (idpair, "(Number * Boolean)"),
-                       (fib, "Number → Number"),
-                       (xb, "Boolean"),
-                       (d, "((Number * Boolean) * ([Char] * Char * Number))"),
-                       (penultimate, "[Number] → Number"),
-                       (res4, "Number")]
-          runInferSpecCases cases
-          failInferSpecCase ff "Type mismatch Boolean ≠ Number"
+          runInferSpecCases [(fib, "Number → Number"),
+                             (penultimate, "[Number] → Number"),
+                             (res4, "Number")]
+        it "should infer type of basic syntax element" $ do
+          let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
+          let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
+          runInferSpecCases [(xb, "Boolean"),
+                             (d, "((Number * Boolean) * ([Char] * Char * Number))")]
+
 
