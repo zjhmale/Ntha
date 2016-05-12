@@ -25,9 +25,8 @@ import System.IO.Unsafe (unsafePerformIO)
     ']'      { RBRACKET }
     '('      { LPAREN }
     ')'      { RPAREN }
-    '<'      { LANGLEBRACKET }
-    '>'      { RANGLEBRACKET }
     '_'      { WILDCARD }
+    '.'      { DOT }
     '::'     { DOUBLECOLON }
     let      { LET }
     VAR      { VAR $$ }
@@ -93,13 +92,16 @@ Form : '(' match Form Cases ')'                    { EPatternMatching $3 $4 }
      | '(' lambda Nameds arrow FormsPlus ')'       { ELambda $3 Nothing $5 }
      | '(' let '[' bindings ']' FormsPlus ')'      { head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) $6 $4 }
      | '(' ListForms ')'                           { $2 }
+     | '(' TupleFroms ')'                          { ETuple $2 }
      | '(' Form FormsPlus ')'                      { foldl (\oper param -> (EApp oper param)) $2 $3 }
      | '[' FormsStar ']'                           { EList $2 }
-     | '<' FormsStar '>'                           { ETuple $2 }
      | Atom                                        { $1 }
 
 ListForms : Form '::' Form                         { EApp (EApp (EVar "Cons") $1) $3 }
           | Form '::' ListForms                    { EApp (EApp (EVar "Cons") $1) $3 }
+
+TupleFroms : Form '.' Form                         { [$1, $3] }
+           | TupleFroms '.' Form                   { $1 ++ [$3] }
 
 FormsPlus : Form                                   { [$1] }
           | Form FormsPlus                         { $1 : $2 }
@@ -114,13 +116,16 @@ Pattern : '_'                                      { WildcardPattern }
         | char                                     { CharPattern $1 }
         | string                                   { StrPattern $1 }
         | con Args                                 { TConPattern $1 $2 }
-        | '<' Patterns '>'                         { TuplePattern $2 }
+        | '(' TuplePatterns ')'                    { TuplePattern $2 }
         | '[' ']'                                  { TConPattern "Nil" [] }
         | '[' Patterns ']'                         { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) $2 }
         | ListPatterns                             { $1 }
 
 Patterns : Pattern                                 { [$1] }
          | Pattern Patterns                        { $1 : $2 }
+
+TuplePatterns : Pattern '.' Pattern                { [$1, $3] }
+              | TuplePatterns '.' Pattern          { $1 ++ [$3] }
 
 ListPatterns : Pattern '::' Pattern                { TConPattern "Cons" [$1, $3] }
              | Pattern '::' ListPatterns           { TConPattern "Cons" [$1, $3] }
