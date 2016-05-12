@@ -34,6 +34,7 @@ tokens :-
        "_"                         { \_ -> WILDCARD }
        "."                         { \_ -> DOT }
        ":" $chars+                 { \s -> KEYWORD (tail s) }
+       ":"                         { \_ -> COLON }
        "∷" | "::"                  { \_ -> DOUBLECOLON }
        "let"                       { \_ -> LET }
        "true" | "false"            { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
@@ -59,6 +60,7 @@ data Token = DATA
            | RBRACE
            | WILDCARD
            | DOT
+           | COLON
            | DOUBLECOLON
            | VAR EName
            | CON EName -- constructor
