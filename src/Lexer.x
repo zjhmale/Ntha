@@ -21,6 +21,7 @@ tokens :-
        "{-".*"-}"                  ; --multicomments
        "data"                      { \_ -> DATA }
        "match"                     { \_ -> MATCH }
+       "if"                        { \_ -> IF }
        "ƒ" | "fun"                 { \_ -> DEFUN }
        "λ" | "lambda"              { \_ -> LAMBDA }
        "⇒" | "=>"                  { \_ -> ARROW }
@@ -45,6 +46,7 @@ data Token = DATA
            | MATCH
            | DEFUN
            | LAMBDA
+           | IF
            | ARROW
            | LBRACKET
            | RBRACKET

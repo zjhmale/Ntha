@@ -19,6 +19,7 @@ import System.IO.Unsafe (unsafePerformIO)
     match    { MATCH }
     defun    { DEFUN }
     lambda   { LAMBDA }
+    if       { IF }
     arrow    { ARROW }
     con      { CON $$ }
     '['      { LBRACKET }
@@ -91,6 +92,7 @@ bindings : binding                                 { [$1] }
 Form : '(' match Form Cases ')'                    { EPatternMatching $3 $4 }
      | '(' lambda Nameds arrow FormsPlus ')'       { ELambda $3 Nothing $5 }
      | '(' let '[' bindings ']' FormsPlus ')'      { head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) $6 $4 }
+     | '(' if Form Form Form ')'                   { EIf $3 [$4] [$5] }
      | '(' ListForms ')'                           { $2 }
      | '(' TupleFroms ')'                          { ETuple $2 }
      | '(' Form FormsPlus ')'                      { foldl (\oper param -> (EApp oper param)) $2 $3 }

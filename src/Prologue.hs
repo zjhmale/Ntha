@@ -14,6 +14,7 @@ assumptions :: Infer TypeScope
 assumptions = do
   tvarA <- makeVariable
   tvarB <- makeVariable
+  tvarC <- makeVariable
   let name = "List"
   let vars = [tvarA]
   let dataType = TOper name vars
@@ -25,7 +26,12 @@ assumptions = do
                                            ("*", functionT [intT, intT] intT),
                                            ("/", functionT [intT, intT] intT),
                                            ("%", functionT [intT, intT] intT),
-                                           ("=", functionT [tvarB, tvarB] intT),
+                                           ("=", functionT [tvarB, tvarB] boolT),
+                                           ("≠", functionT [tvarC, tvarC] boolT),
+                                           ("<", functionT [intT, intT] intT),
+                                           (">", functionT [intT, intT] intT),
+                                           ("≤", functionT [intT, intT] intT),
+                                           ("≥", functionT [intT, intT] intT),
                                            ("Cons", mkTCon consConstructor listData),
                                            ("Nil", mkTCon nilConstructor listData),
                                            ("inc", functionT [intT] intT),
@@ -38,6 +44,11 @@ builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (
                                             ("/", binFn (\(VNum a) (VNum b) -> (VNum $ a `div` b))),
                                             ("%", binFn (\(VNum a) (VNum b) -> (VNum $ a `mod` b))),
                                             ("=", binFn (\a b -> VBool $ a == b)),
+                                            ("≠", binFn (\a b -> VBool $ a /= b)),
+                                            ("<", binFn (\a b -> VBool $ a < b)),
+                                            (">", binFn (\a b -> VBool $ a > b)),
+                                            ("≤", binFn (\a b -> VBool $ a <= b)),
+                                            ("≥", binFn (\a b -> VBool $ a >= b)),
                                             ("Cons", binFn (\a b -> cons a b)),
                                             ("Nil", nil),
                                             ("inc", Fn (\(VNum n) _ -> VNum $ n + 1)),
