@@ -82,7 +82,7 @@ VConstructors : VConstructor                       { [$1] }
               | VConstructor VConstructors         { $1 : $2 }
 
 Args : {- empty -}                                 { [] }
-     | VAR Args                                    { (IdPattern $1) : $2 }
+     | Pattern Args                                { $1 : $2 }
 
 Nameds : {- empty -}                               { [] }
        | VAR Nameds                                { (Named $1 Nothing) : $2 }
@@ -125,7 +125,8 @@ Pattern : '_'                                      { WildcardPattern }
         | boolean                                  { BoolPattern $1 }
         | char                                     { CharPattern $1 }
         | string                                   { StrPattern $1 }
-        | con Args                                 { TConPattern $1 $2 }
+        | con                                      { TConPattern $1 [] }
+        | '(' con Args ')'                         { TConPattern $2 $3 }
         | '(' TuplePatterns ')'                    { TuplePattern $2 }
         | '[' ']'                                  { TConPattern "Nil" [] }
         | '[' Patterns ']'                         { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) $2 }
