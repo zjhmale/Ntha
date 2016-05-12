@@ -15,7 +15,7 @@ spec = do
       let name = "List"
       let vars = [tvarA]
       let dataType = TOper name vars
-      let consConstructor = TypeConstructor "Cons" [tvarA, TOper "List" [tvarA]]
+      let consConstructor = TypeConstructor "Cons" [tvarA, dataType]
       let nilConstructor = TypeConstructor "Nil" []
       let listData = EDataDecl name dataType vars [consConstructor, nilConstructor]
       tvarB <- makeVariable
@@ -24,7 +24,7 @@ spec = do
       let dataType2 = TOper name2 vars2
       let nullConstructor = TypeConstructor "Null" []
       let leafConstructor = TypeConstructor "Leaf" [tvarB]
-      let nodeConstructor = TypeConstructor "Node" [TOper "Tree" [tvarB], tvarB, TOper "Tree" [tvarB]]
+      let nodeConstructor = TypeConstructor "Node" [dataType2, tvarB, dataType2]
       let treeData = EDataDecl name2 dataType2 vars2 [nullConstructor, leafConstructor, nodeConstructor]
       ((PP.text . show) (parseExpr "(data List a (Cons a (List a)) Nil)")) `shouldBe` ((PP.text . show) (EProgram [listData]))
       ((PP.text . show) (parseExpr "(data Tree a Null (Leaf a) (Node (Tree a) a (Tree a)))")) `shouldBe` ((PP.text . show) (EProgram [treeData]))
@@ -49,6 +49,7 @@ spec = do
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
       parseExpr "(let x (penultimate [[\"g\"] [\"c\"]]))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "x") [] [EApp (EVar "penultimate") (EList [EList [EStr "g"], EList [EStr "c"]])]]
+      parseExpr "(+ 1 2 3)" `shouldBe` EProgram [EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)]
       parseExpr "(let y [1 2 3])" `shouldBe` EProgram [EDestructLetBinding (IdPattern "y") [] [EList [ENum 1, ENum 2, ENum 3]]]
       parseExpr "(let z [])" `shouldBe` EProgram [EDestructLetBinding (IdPattern "z") [] [EList []]]
       parseExpr "(ƒ comp [f g x] (f (g x)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "comp") [IdPattern "f", IdPattern "g", IdPattern "x"] [EApp (EVar "f") (EApp (EVar "g") (EVar "x"))]]
@@ -68,4 +69,19 @@ spec = do
       parseExpr "(let patmat1 (match <\"a\" 3> (<a b> => <\"ok\" a b>)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "patmat1") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", IdPattern "b"]) [ETuple [EStr "ok", EVar "a", EVar "b"]]]]]
       parseExpr "(let patmat2 (match <\"a\" 3> (<a _> => <\"ok\" a>)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "patmat2") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", WildcardPattern]) [ETuple [EStr "ok", EVar "a"]]]]]
       parseExpr "(ƒ k [x y] (match <x y> (<0 0> => 0) (_ => 1)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "k") [IdPattern "x", IdPattern "y"] [EPatternMatching (ETuple [EVar "x", EVar "y"]) [Case (TuplePattern [NumPattern 0, NumPattern 0]) [ENum 0], Case WildcardPattern [ENum 1]]]]
-      parseExpr "(+ 1 2 3)" `shouldBe` EProgram [EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)]
+      let name3 = "Ast"
+      let dataType3 = TOper name3 []
+      let numConstructor = TypeConstructor "Num" [intT]
+      let addConstructor = TypeConstructor "Add" [dataType3, dataType3]
+      let subConstructor = TypeConstructor "Sub" [dataType3, dataType3]
+      let mulConstructor = TypeConstructor "Mul" [dataType3, dataType3]
+      let divConstructor = TypeConstructor "Div" [dataType3, dataType3]
+      let astData = EDataDecl name3 dataType3 [] [numConstructor, addConstructor, subConstructor, mulConstructor, divConstructor]
+      parseExpr "(data Ast (Num Number) (Add Ast Ast) (Sub Ast Ast) (Mul Ast Ast) (Div Ast Ast))" `shouldBe` EProgram [astData]
+      parseExpr "(ƒ eval [n] (match n (Num a => a) (Add a b => (+ (eval a) (eval b))) (Sub a b => (- (eval a) (eval b))) (Mul a b => (* (eval a) (eval b))) (Div a b => (/ (eval a) (eval b)))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "eval") [IdPattern "n"] [EPatternMatching (EVar "n") [Case (TConPattern "Num" [IdPattern "a"]) [EVar "a"],
+                                                                                                                                                                                                                                                                                                          Case (TConPattern "Add" [IdPattern "a", IdPattern "b"]) [EApp (EApp (EVar "+") $ EApp (EVar "eval") $ EVar "a") $ EApp (EVar "eval") $ EVar "b"],
+                                                                                                                                                                                                                                                                                                          Case (TConPattern "Sub" [IdPattern "a", IdPattern "b"]) [EApp (EApp (EVar "-") $ EApp (EVar "eval") $ EVar "a") $ EApp (EVar "eval") $ EVar "b"],
+                                                                                                                                                                                                                                                                                                          Case (TConPattern "Mul" [IdPattern "a", IdPattern "b"]) [EApp (EApp (EVar "*") $ EApp (EVar "eval") $ EVar "a") $ EApp (EVar "eval") $ EVar "b"],
+                                                                                                                                                                                                                                                                                                          Case (TConPattern "Div" [IdPattern "a", IdPattern "b"]) [EApp (EApp (EVar "/") $ EApp (EVar "eval") $ EVar "a") $ EApp (EVar "eval") $ EVar "b"]]]]
+      parseExpr "(let sym (Mul (Add (Num 4) (Num 3)) (Sub (Num 4) (Num 1))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "sym") [] [EApp (EApp (EVar "Mul") (EApp (EApp (EVar "Add") $ EApp (EVar "Num") $ ENum 4) $ EApp (EVar "Num") $ ENum 3)) (EApp (EApp (EVar "Sub") $ EApp (EVar "Num") $ ENum 4) $ EApp (EVar "Num") $ ENum 1)]]
+      parseExpr "(let result (eval sym))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "result") [] [EApp (EVar "eval") $ EVar "sym"]]

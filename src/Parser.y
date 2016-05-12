@@ -66,6 +66,7 @@ SimpleArgs : {- empty -}                           { [] }
            | VAR SimpleArgs                        { $1 : $2 }
 
 VConArg : VAR                                      { EVCAVar $1 }
+        | con                                      { EVCAOper $1 [] }
         | '(' con SimpleArgs ')'                   { EVCAOper $2 $3 }
 
 VConArgs : VConArg                                 { [$1] }
