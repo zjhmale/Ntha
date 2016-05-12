@@ -17,10 +17,18 @@ spec = do
       let dataType = TOper name vars
       let consConstructor = TypeConstructor "Cons" [tvarA, TOper "List" [tvarA]]
       let nilConstructor = TypeConstructor "Nil" []
-      let listData = EDataDecl "List" dataType vars [consConstructor, nilConstructor]
-      resetId
-      resetUniqueName
-      parseExpr "(data List a (Cons a (List a)) Nil)" `shouldBe` EProgram [listData]
+      let listData = EDataDecl name dataType vars [consConstructor, nilConstructor]
+      tvarB <- makeVariable
+      let name2 = "Tree"
+      let vars2 = [tvarB]
+      let dataType2 = TOper name2 vars2
+      let nullConstructor = TypeConstructor "Null" []
+      let leafConstructor = TypeConstructor "Leaf" [tvarB]
+      let nodeConstructor = TypeConstructor "Node" [TOper "Tree" [tvarB], tvarB, TOper "Tree" [tvarB]]
+      let treeData = EDataDecl name2 dataType2 vars2 [nullConstructor, leafConstructor, nodeConstructor]
+      ((PP.text . show) (parseExpr "(data List a (Cons a (List a)) Nil)")) `shouldBe` ((PP.text . show) (EProgram [listData]))
+      ((PP.text . show) (parseExpr "(data Tree a Null (Leaf a) (Node (Tree a) a (Tree a)))")) `shouldBe` ((PP.text . show) (EProgram [treeData]))
+      parseExpr "(let t (Node (Leaf 5) 4 (Leaf 3)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "t") [] [EApp (EApp (EApp (EVar "Node") $ EApp (EVar "Leaf") $ ENum 5) $ ENum 4) $ EApp (EVar "Leaf") $ ENum 3]]
       parseExpr "(let xs Nil)" `shouldBe` EProgram [EDestructLetBinding (IdPattern "xs") [] [(EVar "Nil")]]
       parseExpr "(let ys (Cons 5 Nil))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "ys") [] [EApp (EApp (EVar "Cons") $ ENum 5) $ EVar "Nil"]]
       parseExpr "(ƒ len [l] (match l (Nil ⇒ 0) (Cons h t ⇒ (+ 1 (len t)))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "len") [IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Nil" []) [ENum 0], Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "+") $ ENum 1) $ EApp (EVar "len") $ EVar "t"]]]]
@@ -56,4 +64,8 @@ spec = do
       parseExpr "(let l2 (append 0 l))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l2") [] [EApp (EApp (EVar "append") $ ENum 0) $ EVar "l"]]
       parseExpr "(ƒ map [f l] (match l (Cons h t => (Cons (f h) (map f t))) (Nil => Nil)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"], Case (TConPattern "Nil" []) [EVar "Nil"]]]]
       parseExpr "(let l3 (map (λx => (= (% x 2) 0)) l))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l3") [] [EApp (EApp (EVar "map") $ ELambda [Named "x" Nothing] Nothing [EApp (EApp (EVar "=") $ EApp (EApp (EVar "%") $ EVar "x") $ ENum 2) $ ENum 0]) $ EVar "l"]]
+      parseExpr "(let patmat0 (match <\"a\" 3> (a => <\"ok\" a>)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "patmat0") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (IdPattern "a") [ETuple [EStr "ok", EVar "a"]]]]]
+      parseExpr "(let patmat1 (match <\"a\" 3> (<a b> => <\"ok\" a b>)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "patmat1") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", IdPattern "b"]) [ETuple [EStr "ok", EVar "a", EVar "b"]]]]]
+      parseExpr "(let patmat2 (match <\"a\" 3> (<a _> => <\"ok\" a>)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "patmat2") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", WildcardPattern]) [ETuple [EStr "ok", EVar "a"]]]]]
+      parseExpr "(ƒ k [x y] (match <x y> (<0 0> => 0) (_ => 1)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "k") [IdPattern "x", IdPattern "y"] [EPatternMatching (ETuple [EVar "x", EVar "y"]) [Case (TuplePattern [NumPattern 0, NumPattern 0]) [ENum 0], Case WildcardPattern [ENum 1]]]]
       parseExpr "(+ 1 2 3)" `shouldBe` EProgram [EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)]

@@ -88,7 +88,7 @@ binding : VAR Form                                 { ELetBinding (IdPattern $1) 
 bindings : binding                                 { [$1] }
          | binding bindings                        { $1 : $2 }
 
-Form : '(' match VAR Cases ')'                     { EPatternMatching (EVar $3) $4 }
+Form : '(' match Form Cases ')'                    { EPatternMatching $3 $4 }
      | '(' lambda Nameds arrow FormsPlus ')'       { ELambda $3 Nothing $5 }
      | '(' let '[' bindings ']' FormsPlus ')'      { head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) $6 $4 }
      | '(' ListForms ')'                           { $2 }
