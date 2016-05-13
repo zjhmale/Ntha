@@ -208,5 +208,3 @@ spec = describe "inference test" $ do
                              (l3, "[Number]"),
                              (profile, "{age: Number, name: [Char]}"),
                              (name, "[Char]")]
-
-

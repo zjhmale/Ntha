@@ -7,6 +7,7 @@ import Type
 import Value
 import Eval
 import Prologue
+import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 import Test.Hspec
 
@@ -109,6 +110,11 @@ spec = describe "evaluation test" $ do
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
           let idpair = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [(ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])]
+          let idpair2 = ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [ELetBinding (IdPattern "a") (ENum 3) [ELetBinding (IdPattern "b") (EApp (EApp (EVar "+") $ EVar "a") $ ENum 3) [(ETuple [EApp (EVar "id") (EVar "a"), EApp (EVar "id") (EVar "b")])]]]
+          let f1 = EDestructLetBinding (IdPattern "f1") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
+          let f2 = EDestructLetBinding (IdPattern "f2") [] [ELambda [Named "x" Nothing, Named "y" Nothing, Named "z" Nothing] Nothing [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
+          let f1res = EDestructLetBinding (IdPattern "f1res") [] [EApp (EApp (EApp (EVar "f1") $ ENum 8) $ ENum 2) $ ENum 3]
+          let f2res = EDestructLetBinding (IdPattern "f2res") [] [EApp (EApp (EApp (EVar "f2") $ ENum 8) $ ENum 2) $ ENum 3]
           runEvalSpecCases [(g, Nothing),
                             (res0, Just $ VNum 6),
                             (f, Nothing),
@@ -116,7 +122,12 @@ spec = describe "evaluation test" $ do
                             (id, Nothing),
                             (res2, Just $ VNum 3),
                             (res3, Just $ VBool True),
-                            (idpair, Just $ VTuple [VNum 3, VBool True])]
+                            (idpair, Just $ VTuple [VNum 3, VBool True]),
+                            (idpair2, Just $ VTuple [VNum 3, VNum 6]),
+                            (f1, Nothing),
+                            (f2, Nothing),
+                            (f1res, Just $ VNum 13),
+                            (f2res, Just $ VNum 13)]
         it "should get value of function definition, application and pattern match" $ do
           let fib = EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0], Case (NumPattern 1) [ENum 1], Case WildcardPattern [EApp (EApp (EVar "+") (EApp (EVar "fib") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 1)) $ EApp (EVar "fib") $ EApp (EApp (EVar "-") $ EVar "x") $ ENum 2]]]
           let fib0 = EApp (EVar "fib") $ ENum 0
@@ -129,6 +140,22 @@ spec = describe "evaluation test" $ do
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
           let res7 = EDestructLetBinding (IdPattern "res7") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
           let res8 = EDestructLetBinding (IdPattern "res7") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3, ENum 4])]
+          let map = EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"],Case (TConPattern "Nil" []) [EVar "Nil"]]]
+          let l = EDestructLetBinding (IdPattern "l") [] [EList [ENum 1, ENum 2, ENum 3]]
+          let l3 = EDestructLetBinding (IdPattern "l3") [] [EApp (EApp (EVar "map") $ ELambda [Named "x" Nothing] Nothing [EApp (EApp (EVar "=") $ EApp (EApp (EVar "%") $ EVar "x") $ ENum 2) $ ENum 0]) $ EVar "l"]
+          let k = EDestructLetBinding (IdPattern "k") [IdPattern "x", IdPattern "y"] [EPatternMatching (ETuple [EVar "x", EVar "y"]) [Case (TuplePattern [NumPattern 0, NumPattern 0]) [ENum 0], Case WildcardPattern [ENum 1]]]
+          let fact = EDestructLetBinding (IdPattern "fact") [IdPattern "n"] [EIf (EApp (EApp (EVar "≤") $ EVar "n") $ ENum 1) [ENum 1] [EApp (EApp (EVar "*") $ EVar "n") (EApp (EVar "fact") $ EApp (EApp (EVar "-") $ EVar "n") $ ENum 1)]]
+          let f5 = EDestructLetBinding (IdPattern "f5") [] [EApp (EVar "fact") $ ENum 5]
+          let comp = EDestructLetBinding (IdPattern "comp") [IdPattern "f", IdPattern "g", IdPattern "x"] [EApp (EVar "f") (EApp (EVar "g") (EVar "x"))]
+          let fix = EDestructLetBinding (IdPattern "fix") [] [EApp (EApp (EVar "comp") $ EVar "inc") (EVar "dec")]
+          let incdec = EDestructLetBinding (IdPattern "incdec") [] [EApp (EVar "fix") (ENum 5)]
+          let len = EDestructLetBinding (IdPattern "len") [IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [ENum 0],Case (TConPattern "Cons" [WildcardPattern, IdPattern "t"]) [EApp (EApp (EVar "+") $ ENum 1) (EApp (EVar "len") $ EVar "t")]]]
+          let lenl = EApp (EVar "len") $ EVar "l"
+          let append = EDestructLetBinding (IdPattern "append") [IdPattern "x", IdPattern "xs"] [EApp (EApp (EVar "Cons") $ EVar "x") $ EVar "xs"]
+          let l2 = EDestructLetBinding (IdPattern "l2") [] [EApp (EApp (EVar "append") $ ENum 0) $ EVar "l"]
+          let patmat0 = EDestructLetBinding (IdPattern "patmat0") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (IdPattern "a") [ETuple [EStr "ok", EVar "a"]]]]
+          let patmat1 = EDestructLetBinding (IdPattern "patmat1") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", IdPattern "b"]) [ETuple [EStr "ok", EVar "a", EVar "b"]]]]
+          let patmat2 = EDestructLetBinding (IdPattern "patmat2") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", WildcardPattern]) [ETuple [EStr "ok", EVar "a"]]]]
           runEvalSpecCases [(fib, Nothing),
                             (fib0, Just $ VNum 0),
                             (fib1, Just $ VNum 1),
@@ -136,11 +163,41 @@ spec = describe "evaluation test" $ do
                             (fib6, Just $ VNum 8),
                             (penultimate, Nothing),
                             (res7, Just $ VNum 0),
-                            (res8, Just $ VNum 3)]
+                            (res8, Just $ VNum 3),
+                            (map, Nothing),
+                            (l, Just $ cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil))),
+                            (l3, Just $ cons (VBool False) (cons (VBool True) (cons (VBool False) nil))),
+                            (k, Nothing),
+                            (fact, Nothing),
+                            (f5, Just $ VNum 120),
+                            (comp, Nothing),
+                            (fix, Nothing),
+                            (incdec, Just $ VNum 5),
+                            (len, Nothing),
+                            (lenl, Just $ VNum 3),
+                            (append, Nothing),
+                            (l2, Just $ cons (VNum 0) (cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil)))),
+                            (patmat0, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), VTuple [cons (VChar 'a') nil, VNum 3]]),
+                            (patmat1, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), cons (VChar 'a') nil, VNum 3]),
+                            (patmat2, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), cons (VChar 'a') nil])]
         it "should get value of basic syntax element" $ do
           let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]
+          let intsum = EApp (EApp (EVar "+") (EApp (EApp (EVar "+") (EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2)) $ ENum 3)) $ ENum 4)) $ ENum 5
+          let l = EDestructLetBinding (IdPattern "y") [] [EList [ENum 1, ENum 2, ENum 3]]
+          let l2 = EDestructLetBinding (IdPattern "z") [] [EList []]
+          let a = EDestructLetBinding (IdPattern "a") [] [EChar 'a']
+          let s = EDestructLetBinding (IdPattern "s") [] [EStr "str"]
+          let l3 = EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]
+          let profile = EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]
+          let name = EAccessor (EVar "profile") "name"
           runEvalSpecCases [(xb, Just $ VBool True),
-                            (d, Just $ VTuple [VTuple [VNum 4, VBool True], VTuple [cons (VChar 't') (cons (VChar 'e') (cons (VChar 's') (cons (VChar 't') nil))), VChar 'c', VNum 45]])]
-
-
+                            (d, Just $ VTuple [VTuple [VNum 4, VBool True], VTuple [cons (VChar 't') (cons (VChar 'e') (cons (VChar 's') (cons (VChar 't') nil))), VChar 'c', VNum 45]]),
+                            (intsum, Just $ VNum 15),
+                            (l, Just $ cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil))),
+                            (l2, Just $ nil),
+                            (a, Just $ VChar 'a'),
+                            (s, Just $ cons (VChar 's') (cons (VChar 't') (cons (VChar 'r') nil))),
+                            (l3, Just $ cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil))),
+                            (profile, Just $ VRecord (M.fromList [("name", cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil)))), ("age", VNum 12)])),
+                            (name, Just $ cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil))))]
