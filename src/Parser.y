@@ -102,6 +102,10 @@ Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
      | '(' ListForms ')'                             { $2 }
      | '(' TupleFroms ')'                            { ETuple $2 }
      | '(' Form FormsPlus ')'                        { foldl (\oper param -> (EApp oper param)) $2 $3 }
+     | '(' OPERATOR FormsPlus ')'                    { case $3 of
+                                                         a:[] -> EApp (EVar $2) a
+                                                         a:b:[] -> EApp (EApp (EVar $2) a) b
+                                                         a:b:xs -> foldl (\oper param -> (EApp (EApp (EVar $2) oper) param)) (EApp (EApp (EVar $2) a) b) xs }
      | '[' FormsStar ']'                             { EList $2 }
      | '{' RecordForms '}'                           { ERecord $2 }
      | '(' keyword Form ')'                          { EAccessor $3 $2 }

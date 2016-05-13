@@ -16,18 +16,6 @@ import Prelude hiding (lookup)
 
 type NonGeneric = (S.Set Type)
 
-prune :: Type -> Infer Type
-prune t = case t of
-            TVar _ inst _ -> do
-              instV <- readIORef inst
-              case instV of
-                Just inst' -> do
-                  newInstance <- prune inst'
-                  writeIORef inst $ Just newInstance
-                  return newInstance
-                Nothing -> return t
-            _ -> return t
-
 occursInType :: Type -> Type -> Infer Bool
 occursInType v t = do
   tP <- prune t

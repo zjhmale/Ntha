@@ -86,7 +86,9 @@ spec = do
       parseExpr "(let res2 (id 3))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]]
       parseExpr "(let res3 (id true))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]]
       parseExpr "(let [id (λx ⇒ x)] ((id 3) . (id true)))" `shouldBe` EProgram [ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [(ETuple [EApp (EVar "id") (ENum 3), EApp (EVar "id") (EBool True)])]]
-      parseExpr "(let f (λ(x: Number) (y: Number) (z: Number) : Number => (+ x y z)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y") $ EVar "z"]]]
+      parseExpr "(let [id (λx ⇒ x) a 3 b (+ a 3)] ((id a) . (id b)))" `shouldBe` EProgram [ELetBinding (IdPattern "id") (ELambda [Named "x" Nothing] Nothing [EVar "x"]) [ELetBinding (IdPattern "a") (ENum 3) [ELetBinding (IdPattern "b") (EApp (EApp (EVar "+") $ EVar "a") $ ENum 3) [(ETuple [EApp (EVar "id") (EVar "a"), EApp (EVar "id") (EVar "b")])]]]]
+      parseExpr "(let f (λ(x: Number) (y: Number) (z: Number) : Number => (+ x y z)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]]
+      parseExpr "(let f (λx y z => (+ x y z)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" Nothing, Named "y" Nothing, Named "z" Nothing] Nothing [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]]
       parseExpr "(let res (f 8 2 3))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "res") [] [EApp (EApp (EApp (EVar "f") $ ENum 8) $ ENum 2) $ ENum 3]]
     it "should parse function definition, application and pattern match" $ do
       parseExpr "(ƒ fib [x]\n (match x\n (0 => 0)\n (1 => 1)\n (_ => (+ (fib (- x 1)) (fib (- x 2))))))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "fib") [IdPattern "x"] [EPatternMatching (EVar "x") [Case (NumPattern 0) [ENum 0],
@@ -96,6 +98,7 @@ spec = do
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]) [ENum 0],
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
                                                                                                                                                                                                                                               Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
+      parseExpr "(let res4 (penultimate [1 2 3]))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "res4") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]]
       parseExpr "(let x (penultimate [[\"g\"] [\"c\"]]))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "x") [] [EApp (EVar "penultimate") (EList [EList [EStr "g"], EList [EStr "c"]])]]
       parseExpr "(ƒ map [f l] (match l ((Cons h t) => (Cons (f h) (map f t))) (Nil => Nil)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"],
                                                                                                                                                                                                                      Case (TConPattern "Nil" []) [EVar "Nil"]]]]
@@ -117,7 +120,7 @@ spec = do
     it "should parse basic syntax element" $ do
       parseExpr "(let x true)" `shouldBe` EProgram [EDestructLetBinding (IdPattern "x") [] [EBool True]]
       parseExpr "(let d ((4 . true) . (\"test\" . 'c' . 45)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]]
-      parseExpr "(+ 1 2 3)" `shouldBe` EProgram [EApp (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2) (ENum 3)]
+      parseExpr "(+ 1 2 3 4 5)" `shouldBe` EProgram [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") (EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ ENum 1) $ ENum 2)) $ ENum 3)) $ ENum 4)) $ ENum 5]
       parseExpr "(let y [1 2 3])" `shouldBe` EProgram [EDestructLetBinding (IdPattern "y") [] [EList [ENum 1, ENum 2, ENum 3]]]
       parseExpr "(let z [])" `shouldBe` EProgram [EDestructLetBinding (IdPattern "z") [] [EList []]]
       parseExpr "(let a 'a')" `shouldBe` EProgram [EDestructLetBinding (IdPattern "a") [] [EChar 'a']]
@@ -125,4 +128,3 @@ spec = do
       parseExpr "(let l (1 :: 2 :: 3 :: Nil))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]]
       parseExpr "(let profile {:name \"ntha\" :age 12})" `shouldBe` EProgram [EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]]
       parseExpr "(:name profile)" `shouldBe` EProgram [EAccessor (EVar "profile") "name"]
-

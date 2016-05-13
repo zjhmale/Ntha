@@ -50,6 +50,18 @@ strT = listT charT
 unitT :: Type
 unitT = TOper "()" []
 
+prune :: Type -> Infer Type
+prune t = case t of
+            TVar _ inst _ -> do
+              instV <- readIORef inst
+              case instV of
+                Just inst' -> do
+                  newInstance <- prune inst'
+                  writeIORef inst $ Just newInstance
+                  return newInstance
+                Nothing -> return t
+            _ -> return t
+
 stringOfType :: M.Map TName TName -> Type -> Infer String
 stringOfType subrule (TVar _ inst name) = do
   instV <- readIORef inst
@@ -64,8 +76,8 @@ stringOfType subrule (TOper name args) = case name of
                                              argStr <- stringOfType subrule $ args!!0
                                              return $ "[" ++ argStr ++ "]"
                                            "→" -> do
-                                             let argT = args!!0
-                                             let rtnT = args!!1
+                                             argT <- prune $ args!!0
+                                             rtnT <- prune $ args!!1
                                              argStr <- stringOfType subrule argT
                                              rtnStr <- stringOfType subrule rtnT
                                              let adjust t s = case t of
@@ -78,9 +90,9 @@ stringOfType subrule (TOper name args) = case name of
                                                then return name
                                                else do
                                                  argsStr <- unwords <$> mapM (stringOfType subrule) args
-                                                 return $ "(" ++ name ++ ":" ++ argsStr ++ ")"
+                                                 return $ "(" ++ name ++ " " ++ argsStr ++ ")"
 stringOfType subrule (TRecord pairs) = do
-  pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> (k ++) <$> stringOfType subrule v) $ M.toList pairs)
+  pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> ((k ++ ": ") ++) <$> stringOfType subrule v) $ M.toList pairs)
   return $ "{" ++ pairsStr ++ "}"
 stringOfType subrule (TCon name types dataType) = do
   dataTypeStr <- stringOfType subrule dataType
@@ -112,7 +124,7 @@ getFreeVars (TCon _ types dataType) = foldM (\acc t -> do
 normalize :: Type -> Infer String
 normalize t = do
   freeVars <- getFreeVars t
-  let subrule = M.map (\c -> [c]) $ M.fromList $ zip (S.toList freeVars) ['α'..'λ']
+  let subrule = M.map (\c -> [c]) $ M.fromList $ zip (S.toList freeVars) ['α'..'ω']
   stringOfType subrule t
 
 instance Show Type where
