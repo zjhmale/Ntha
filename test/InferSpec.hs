@@ -56,7 +56,7 @@ spec = describe "inference test" $ do
                              (xy, "(Number * Number)"),
                              (zs, "[Number]"),
                              (z, "Number")]
-        it "should parse ADT and pattern match expressions part2" $ do
+        it "should infer type of ADT and pattern match expressions part2" $ do
           tvarB <- makeVariable
           let name2 = "Tree"
           let vars2 = [tvarB]
@@ -68,7 +68,7 @@ spec = describe "inference test" $ do
           let t = EApp (EApp (EApp (EVar "Node") $ EApp (EVar "Leaf") $ ENum 5) $ ENum 4) $ EApp (EVar "Leaf") $ ENum 3
           runInferSpecCases [(treeData, "(Tree α)"),
                              (t, "(Tree Number)")]
-        it "should parse ADT and pattern match expressions part3" $ do
+        it "should infer type of ADT and pattern match expressions part3" $ do
           let name3 = "Ast"
           let dataType3 = TOper name3 []
           let numConstructor = TypeConstructor "Num" [intT]
@@ -84,7 +84,7 @@ spec = describe "inference test" $ do
                              (eval, "Ast → Number"),
                              (sym, "Ast"),
                              (result, "Number")]
-        it "should parse ADT and pattern match expressions part4" $ do
+        it "should infer type of ADT and pattern match expressions part4" $ do
           let name4 = "Oper"
           let dataType4 = TOper name4 []
           let addOperConstructor = TypeConstructor "Add" []
