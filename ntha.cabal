@@ -40,6 +40,9 @@ executable ntha-exe
   build-depends:       base
                      , ntha
                      , containers
+                     , lens
+                     , haskeline
+                     , mtl
   default-language:    Haskell2010
 
 test-suite ntha-test
