@@ -131,7 +131,7 @@ Pattern : '_'                                        { WildcardPattern }
         | number                                     { NumPattern $1 }
         | boolean                                    { BoolPattern $1 }
         | char                                       { CharPattern $1 }
-        | string                                     { StrPattern $1 }
+        | string                                     { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) (map CharPattern $1) }
         | con                                        { TConPattern $1 [] }
         | '(' con Args ')'                           { TConPattern $2 $3 }
         | '(' TuplePatterns ')'                      { TuplePattern $2 }

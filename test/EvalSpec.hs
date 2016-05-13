@@ -156,6 +156,11 @@ spec = describe "evaluation test" $ do
           let patmat0 = EDestructLetBinding (IdPattern "patmat0") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (IdPattern "a") [ETuple [EStr "ok", EVar "a"]]]]
           let patmat1 = EDestructLetBinding (IdPattern "patmat1") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", IdPattern "b"]) [ETuple [EStr "ok", EVar "a", EVar "b"]]]]
           let patmat2 = EDestructLetBinding (IdPattern "patmat2") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", WildcardPattern]) [ETuple [EStr "ok", EVar "a"]]]]
+          let patmat3 = EDestructLetBinding (IdPattern "patmat3") [] [EPatternMatching (EChar 'a') [Case (CharPattern 'a') [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat4 = EDestructLetBinding (IdPattern "patmat4") [] [EPatternMatching (EBool True) [Case (BoolPattern True) [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat5 = EDestructLetBinding (IdPattern "patmat5") [] [EPatternMatching (ENum 1) [Case (NumPattern 1) [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat6 = EDestructLetBinding (IdPattern "patmat6") [] [EPatternMatching (EStr "abc") [Case (TConPattern "Cons" [CharPattern 'a', (TConPattern "Cons" [CharPattern 'b', (TConPattern "Cons" [CharPattern 'c', TConPattern "Nil" []])])]) [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat7 = EDestructLetBinding (IdPattern "patmat7") [] [EPatternMatching (EStr "acb") [Case (TConPattern "Cons" [CharPattern 'a', (TConPattern "Cons" [CharPattern 'b', (TConPattern "Cons" [CharPattern 'c', TConPattern "Nil" []])])]) [EBool True], Case WildcardPattern [EBool False]]]
           runEvalSpecCases [(fib, Nothing),
                             (fib0, Just $ VNum 0),
                             (fib1, Just $ VNum 1),
@@ -179,7 +184,12 @@ spec = describe "evaluation test" $ do
                             (l2, Just $ cons (VNum 0) (cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil)))),
                             (patmat0, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), VTuple [cons (VChar 'a') nil, VNum 3]]),
                             (patmat1, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), cons (VChar 'a') nil, VNum 3]),
-                            (patmat2, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), cons (VChar 'a') nil])]
+                            (patmat2, Just $ VTuple [cons (VChar 'o') (cons (VChar 'k') nil), cons (VChar 'a') nil]),
+                            (patmat3, Just $ VBool True),
+                            (patmat4, Just $ VBool True),
+                            (patmat5, Just $ VBool True),
+                            (patmat6, Just $ VBool True),
+                            (patmat7, Just $ VBool False)]
         it "should get value of basic syntax element" $ do
           let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]

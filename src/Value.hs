@@ -47,7 +47,6 @@ type FreeVal = Value
 data Value = VNum Int
            | VChar Char
            | VBool Bool
-           | VStr String
            | VTuple [Value]
            | VRecord (M.Map EField Value)
            | VUnit
@@ -82,7 +81,6 @@ instance Show Value where
   show (VNum i) = show i
   show (VChar c) = [c]
   show (VBool b) = show b
-  show (VStr s) = s
   show (VTuple values) = "(" ++ intercalate "," (map show values) ++ ")"
   show (VRecord pairs) = stringOfPairs pairs
   show VUnit = "⊥"

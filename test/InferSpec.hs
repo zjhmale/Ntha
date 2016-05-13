@@ -167,6 +167,10 @@ spec = describe "inference test" $ do
           let patmat0 = EDestructLetBinding (IdPattern "patmat0") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (IdPattern "a") [ETuple [EStr "ok", EVar "a"]]]]
           let patmat1 = EDestructLetBinding (IdPattern "patmat1") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", IdPattern "b"]) [ETuple [EStr "ok", EVar "a", EVar "b"]]]]
           let patmat2 = EDestructLetBinding (IdPattern "patmat2") [] [EPatternMatching (ETuple [EStr "a", ENum 3]) [Case (TuplePattern [IdPattern "a", WildcardPattern]) [ETuple [EStr "ok", EVar "a"]]]]
+          let patmat3 = EDestructLetBinding (IdPattern "patmat3") [] [EPatternMatching (EChar 'a') [Case (CharPattern 'a') [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat4 = EDestructLetBinding (IdPattern "patmat4") [] [EPatternMatching (EBool True) [Case (BoolPattern True) [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat5 = EDestructLetBinding (IdPattern "patmat5") [] [EPatternMatching (ENum 1) [Case (NumPattern 1) [EBool True], Case WildcardPattern [EBool False]]]
+          let patmat6 = EDestructLetBinding (IdPattern "patmat6") [] [EPatternMatching (EStr "abc") [Case (TConPattern "Cons" [CharPattern 'a', (TConPattern "Cons" [CharPattern 'b', (TConPattern "Cons" [CharPattern 'c', TConPattern "Nil" []])])]) [EBool True], Case WildcardPattern [EBool False]]]
           runInferSpecCases [(fib, "Number → Number"),
                              (fib0, "Number"),
                              (penultimate, "[Number] → Number"),
@@ -186,7 +190,11 @@ spec = describe "inference test" $ do
                              (l2, "[Number]"),
                              (patmat0, "([Char] * ([Char] * Number))"),
                              (patmat1, "([Char] * [Char] * Number)"),
-                             (patmat2, "([Char] * [Char])")]
+                             (patmat2, "([Char] * [Char])"),
+                             (patmat3, "Boolean"),
+                             (patmat4, "Boolean"),
+                             (patmat5, "Boolean"),
+                             (patmat6, "Boolean")]
         it "should infer type of basic syntax element" $ do
           let xb = EDestructLetBinding (IdPattern "x") [] [EBool True]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 4, EBool True], ETuple [EStr "test", EChar 'c', ENum 45]]]

@@ -120,7 +120,6 @@ match input pattern scope = case pattern of
                               NumPattern val -> (scope, input == (VNum val))
                               BoolPattern val -> (scope, input == (VBool val))
                               CharPattern val -> (scope, input == (VChar val))
-                              StrPattern val -> (scope, input == (VStr val))
                               TuplePattern pats -> case input of
                                                     VTuple items -> if length items /= length pats
                                                                    then (scope, False)

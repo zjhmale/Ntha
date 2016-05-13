@@ -103,7 +103,6 @@ visitPattern pattern scope nonGeneric = case pattern of
                                           NumPattern _ -> return (scope, nonGeneric, intT)
                                           BoolPattern _ -> return (scope, nonGeneric, boolT)
                                           CharPattern _ -> return (scope, nonGeneric, charT)
-                                          StrPattern _ -> return (scope, nonGeneric, strT)
                                           TuplePattern items -> do
                                             (itemTypes, newScope, newNonGeneric) <- foldM (\(types, env, nonGen) item -> do
                                                                                             (newEnv, newNonGen, itemT) <- visitPattern item env nonGen
