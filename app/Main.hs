@@ -10,6 +10,7 @@ import Control.Lens
 import Control.Monad.Trans
 import System.Environment
 import System.Console.Haskeline
+import Data.List (intercalate)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Control.Exception as E
@@ -46,13 +47,25 @@ loop env = do
       return emptyEnv
     Just input -> (liftIO $ process env input) >>= (\env -> loop env)
 
+prologueMessage :: String
+prologueMessage = intercalate "\n"
+  ["      _   __   __     __",
+   "     / | / /  / /_   / /_   ____ _",
+   "    /  |/ /  / __/  / __ \\ / __ `/",
+   "   / /|  /  / /_   / / / // /_/ /",
+   "  /_/ |_/   \\__/  /_/ /_/ \\__,_/",
+   ""
+   ]
+
 main :: IO Env
 main = do
   env <- loadlib
   args <- getArgs
   case (args ^? element 0) of
     Just arg -> if arg == "repl"
-               then runInputT defaultSettings (loop env)
+               then do
+                putStrLn prologueMessage
+                runInputT defaultSettings (loop env)
                else do
                 putStrLn "unsupported mode"
                 return emptyEnv
