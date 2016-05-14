@@ -134,3 +134,24 @@ spec = do
       parseExpr "(let l (1 :: 2 :: 3 :: Nil))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]]
       parseExpr "(let profile {:name \"ntha\" :age 12})" `shouldBe` EProgram [EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]]
       parseExpr "(:name profile)" `shouldBe` EProgram [EAccessor (EVar "profile") "name"]
+    it "should parse destructuring" $ do
+      parseExpr "(let (a . b) (3 . \"d\"))" `shouldBe` EProgram [EDestructLetBinding (TuplePattern [IdPattern "a", IdPattern "b"]) [] [ETuple [ENum 3, EStr "d"]]]
+      parseExpr "(let d ((3 . true) . (\"test\" . 'c' . a)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 3, EBool True], ETuple [EStr "test", EChar 'c', EVar "a"]]]]
+      parseExpr "(let ((_ . bool) . (_ . _ . _)) d)" `shouldBe` EProgram [EDestructLetBinding (TuplePattern [TuplePattern [WildcardPattern, IdPattern "bool"], TuplePattern [WildcardPattern, WildcardPattern, WildcardPattern]]) [] [EVar "d"]]
+      parseExpr "(let [(a . b . c) (1 . 2 . 3)] (+ a b c))" `shouldBe` EProgram [ELetBinding (TuplePattern [IdPattern "a", IdPattern "b", IdPattern "c"]) (ETuple [ENum 1, ENum 2, ENum 3]) [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]]
+      parseExpr "(let (a :: b :: c) [1 2 3])" `shouldBe` EProgram [EDestructLetBinding (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]]) [] [EList [ENum 1, ENum 2, ENum 3]]]
+      parseExpr "(let [(a :: b :: c) [1 2 3]] (+ a b c))" `shouldBe` EProgram [ELetBinding (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]]) (EList [ENum 1, ENum 2, ENum 3]) [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]]
+      parseExpr "(ƒ f [(a . b . c)] (+ a b c))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [(TuplePattern [IdPattern "a", IdPattern "b", IdPattern "c"])] [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]]
+      parseExpr "(ƒ f [(a :: b :: c)] (+ a b c))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [(TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]])] [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]]
+      parseExpr "(f (a . b . c))" `shouldBe` EProgram [EApp (EVar "f") $ ETuple [EVar "a", EVar "b", EVar "c"]]
+      parseExpr "(f [a b c])" `shouldBe` EProgram [EApp (EVar "f") $ EList [EVar "a", EVar "b", EVar "c"]]
+      tvarA <- makeVariable
+      let name = "Maybe"
+      let vars = [tvarA]
+      let dataType = TOper name vars
+      let justConstructor = TypeConstructor "Just" [tvarA]
+      let nothingConstructor = TypeConstructor "Nothing" []
+      let maybeData = EDataDecl name dataType vars [justConstructor, nothingConstructor]
+      ((PP.text . show) (parseExpr "(data Maybe a (Just a) Nothing)")) `shouldBe` ((PP.text . show) (EProgram [maybeData]))
+      parseExpr "(ƒ f [(Just a)] (+ a 1))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [(TConPattern "Just" [IdPattern "a"])] [(EApp (EApp (EVar "+") $ EVar "a") $ ENum 1)]]
+      parseExpr "(f (Just 2))" `shouldBe` EProgram [EApp (EVar "f") $ EApp (EVar "Just") $ ENum 2]

@@ -66,7 +66,7 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
                                                                                                                     in TypeConstructor cname cargs')
                                                                                    $5
                                                            return $ EDataDecl $3 dataType vars constructors' }
-     | '(' let VAR FormsPlus ')'                     { EDestructLetBinding (IdPattern $3) [] $4 }
+     | '(' let Pattern FormsPlus ')'                 { EDestructLetBinding $3 [] $4 }
      | Form                                          { $1 }
 
 SimpleArgs : {- empty -}                             { [] }
@@ -100,7 +100,7 @@ Nameds : {- empty -}                                 { [] }
        | VAR Nameds                                  { (Named $1 Nothing) : $2 }
        | '(' VAR ':' con ')' Nameds                  { (Named $2 (Just (TOper $4 []))) : $6 }
 
-binding : VAR Form                                   { ELetBinding (IdPattern $1) $2 [] }
+binding : Pattern Form                               { ELetBinding $1 $2 [] }
 
 bindings : binding                                   { [$1] }
          | binding bindings                          { $1 : $2 }
@@ -149,6 +149,7 @@ Pattern : '_'                                        { WildcardPattern }
         | '[' ']'                                    { TConPattern "Nil" [] }
         | '[' Patterns ']'                           { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) $2 }
         | ListPatterns                               { $1 }
+        | '(' ListDestructPats ')'                   { $2 }
 
 Patterns : Pattern                                   { [$1] }
          | Pattern Patterns                          { $1 : $2 }
@@ -158,6 +159,9 @@ TuplePatterns : Pattern '.' Pattern                  { [$1, $3] }
 
 ListPatterns : Pattern '::' Pattern                  { TConPattern "Cons" [$1, $3] }
              | Pattern '::' ListPatterns             { TConPattern "Cons" [$1, $3] }
+
+ListDestructPats : Pattern '::' Pattern              { TConPattern "Cons" [$1, TConPattern "Cons" [$3, TConPattern "Nil" []]] }
+                 | Pattern '::' ListDestructPats     { TConPattern "Cons" [$1, $3] }
 
 Case : '(' Pattern arrow FormsPlus ')'               { Case $2 $4 }
 

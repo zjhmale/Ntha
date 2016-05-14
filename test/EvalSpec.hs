@@ -215,3 +215,44 @@ spec = describe "evaluation test" $ do
                             (l3, Just $ cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil))),
                             (profile, Just $ VRecord (M.fromList [("name", cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil)))), ("age", VNum 12)])),
                             (name, Just $ cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil))))]
+        it "should get value of destructuring" $ do
+          let abpair = EDestructLetBinding (TuplePattern [IdPattern "a", IdPattern "b"]) [] [ETuple [ENum 3, EStr "d"]]
+          let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 3, EBool True], ETuple [EStr "test", EChar 'c', EVar "a"]]]
+          let bool = EDestructLetBinding (TuplePattern [TuplePattern [WildcardPattern, IdPattern "bool"], TuplePattern [WildcardPattern, WildcardPattern, WildcardPattern]]) [] [EVar "d"]
+          let boolv = EVar "bool"
+          let abctuple = ELetBinding (TuplePattern [IdPattern "a", IdPattern "b", IdPattern "c"]) (ETuple [ENum 1, ENum 2, ENum 3]) [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let abclist = EDestructLetBinding (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]]) [] [EList [ENum 1, ENum 2, ENum 3]]
+          let a = EVar "a"
+          let b = EVar "b"
+          let c = EVar "c"
+          let abclist2 = ELetBinding (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]]) (EList [ENum 1, ENum 2, ENum 3]) [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let abctuplefn = EDestructLetBinding (IdPattern "f1") [(TuplePattern [IdPattern "a", IdPattern "b", IdPattern "c"])] [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let abclistfn = EDestructLetBinding (IdPattern "f2") [(TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]])] [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let res1 = EApp (EVar "f1") $ ETuple [EVar "a", EVar "b", EVar "c"]
+          let res2 = EApp (EVar "f2") $ EList [EVar "a", EVar "b", EVar "c"]
+          tvarA <- makeVariable
+          let name = "Maybe"
+          let vars = [tvarA]
+          let dataType = TOper name vars
+          let justConstructor = TypeConstructor "Just" [tvarA]
+          let nothingConstructor = TypeConstructor "Nothing" []
+          let maybeData = EDataDecl name dataType vars [justConstructor, nothingConstructor]
+          let f = EDestructLetBinding (IdPattern "f3") [(TConPattern "Just" [IdPattern "a"])] [(EApp (EApp (EVar "+") $ EVar "a") $ ENum 1)]
+          let res3 = EApp (EVar "f3") $ EApp (EVar "Just") $ ENum 2
+          runEvalSpecCases [(abpair, Just $ VTuple [VNum 3, makeList [VChar 'd']]),
+                            (d, Just $ VTuple [VTuple [VNum 3, VBool True], VTuple [makeList [VChar 't', VChar 'e', VChar 's', VChar 't'], VChar 'c', VNum 3]]),
+                            (bool, Just $ VTuple [VTuple [VNum 3, VBool True], VTuple [makeList [VChar 't', VChar 'e', VChar 's', VChar 't'], VChar 'c', VNum 3]]),
+                            (boolv, Just $ VBool True),
+                            (abctuple, Just $ VNum 6),
+                            (abclist, Just $ makeList [VNum 1, VNum 2, VNum 3]),
+                            (a, Just $ VNum 1),
+                            (b, Just $ VNum 2),
+                            (c, Just $ VNum 3),
+                            (abclist2, Just $ VNum 6),
+                            (abctuplefn, Nothing),
+                            (abclistfn, Nothing),
+                            (res1, Just $ VNum 6),
+                            (res2, Just $ VNum 6),
+                            (maybeData, Just VUnit),
+                            (f, Nothing),
+                            (res3, Just $ VNum 3)]

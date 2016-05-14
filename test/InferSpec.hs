@@ -218,3 +218,44 @@ spec = describe "inference test" $ do
                              (l3, "[Number]"),
                              (profile, "{age: Number, name: [Char]}"),
                              (name, "[Char]")]
+        it "should infer type of destructuring" $ do
+          let abpair = EDestructLetBinding (TuplePattern [IdPattern "a", IdPattern "b"]) [] [ETuple [ENum 3, EStr "d"]]
+          let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 3, EBool True], ETuple [EStr "test", EChar 'c', EVar "a"]]]
+          let bool = EDestructLetBinding (TuplePattern [TuplePattern [WildcardPattern, IdPattern "bool"], TuplePattern [WildcardPattern, WildcardPattern, WildcardPattern]]) [] [EVar "d"]
+          let boolv = EVar "bool"
+          let abctuple = ELetBinding (TuplePattern [IdPattern "a", IdPattern "b", IdPattern "c"]) (ETuple [ENum 1, ENum 2, ENum 3]) [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let abclist = EDestructLetBinding (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]]) [] [EList [ENum 1, ENum 2, ENum 3]]
+          let a = EVar "a"
+          let b = EVar "b"
+          let c = EVar "c"
+          let abclist2 = ELetBinding (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]]) (EList [ENum 1, ENum 2, ENum 3]) [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let abctuplefn = EDestructLetBinding (IdPattern "f1") [(TuplePattern [IdPattern "a", IdPattern "b", IdPattern "c"])] [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let abclistfn = EDestructLetBinding (IdPattern "f2") [(TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [IdPattern "b", TConPattern "Cons" [IdPattern "c", TConPattern "Nil" []]]])] [(EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "a") $ EVar "b")) $ EVar "c")]
+          let res1 = EApp (EVar "f1") $ ETuple [EVar "a", EVar "b", EVar "c"]
+          let res2 = EApp (EVar "f2") $ EList [EVar "a", EVar "b", EVar "c"]
+          tvarA <- makeVariable
+          let name = "Maybe"
+          let vars = [tvarA]
+          let dataType = TOper name vars
+          let justConstructor = TypeConstructor "Just" [tvarA]
+          let nothingConstructor = TypeConstructor "Nothing" []
+          let maybeData = EDataDecl name dataType vars [justConstructor, nothingConstructor]
+          let f = EDestructLetBinding (IdPattern "f3") [(TConPattern "Just" [IdPattern "a"])] [(EApp (EApp (EVar "+") $ EVar "a") $ ENum 1)]
+          let res3 = EApp (EVar "f3") $ EApp (EVar "Just") $ ENum 2
+          runInferSpecCases [(abpair, "(Number * [Char])"),
+                             (d, "((Number * Boolean) * ([Char] * Char * Number))"),
+                             (bool, "((Number * Boolean) * ([Char] * Char * Number))"),
+                             (boolv, "Boolean"),
+                             (abctuple, "Number"),
+                             (a, "Number"),
+                             (b, "Number"),
+                             (c, "Number"),
+                             (abclist, "[Number]"),
+                             (abclist2, "Number"),
+                             (abctuplefn, "(Number * Number * Number) → Number"),
+                             (abclistfn, "[Number] → Number"),
+                             (res1, "Number"),
+                             (res2, "Number"),
+                             (maybeData, "(Maybe α)"),
+                             (f, "(Maybe Number) → Number"),
+                             (res3, "Number")]

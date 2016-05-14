@@ -140,7 +140,14 @@ definePattern pattern t scope = do
                             return newScope
                           _ -> error $ "Invalid type " ++ show tP ++ " for pattern " ++ show pattern
     TConPattern _ patterns -> case tP of
+                              -- t is always functionT for now so a little non-sense for this case.
                               TCon _ types _ -> do
+                                newScope <- foldM (\env (pat, patT) -> do
+                                                    newEnv <- definePattern pat patT env
+                                                    return newEnv)
+                                                  scope $ zip patterns types
+                                return newScope
+                              TOper _ types -> do
                                 newScope <- foldM (\env (pat, patT) -> do
                                                     newEnv <- definePattern pat patT env
                                                     return newEnv)

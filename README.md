@@ -41,14 +41,23 @@ a tiny statically typed functional programming language.
   (Let [Char] Expr Expr)
   (Binop Op (Expr . Expr)))
 
+(let op-map {:add +
+             :sub -
+             :mul *
+             :div /})
+
+(ƒ do-eval [fn (v1 . v2)]
+  (Just (+ v1 v2)))
+
 (let eval-op
   (λ op v1 v2 ⇒
     (match (v1 . v2)
-      (((Just v1) . (Just v2)) ⇒ (match op
-                                    (Add ⇒ (Just (+ v1 v2)))
-                                    (Sub ⇒ (Just (- v1 v2)))
-                                    (Mul ⇒ (Just (* v1 v2)))
-                                    (Div ⇒ (Just (/ v1 v2)))))
+      (((Just v1) . (Just v2)) ⇒
+        (match op
+          (Add ⇒ (do-eval (:add op-map) (v1 . v2)))
+          (Sub ⇒ (do-eval (:sub op-map) (v1 . v2)))
+          (Mul ⇒ (do-eval (:mul op-map) (v1 . v2)))
+          (Div ⇒ (do-eval (:div op-map) (v1 . v2)))))
       (_ ⇒ Nothing))))
 
 ;; could be more concise with do notation.
