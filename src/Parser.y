@@ -73,7 +73,9 @@ SimpleArgs : {- empty -}                             { [] }
            | VAR SimpleArgs                          { $1 : $2 }
 
 VConArg : VAR                                        { EVCAVar $1 }
-        | con                                        { EVCAOper $1 [] }
+        | con                                        { if $1 == "String"
+                                                       then EVCAList (EVCAOper "Char" []) -- special case for String pattern
+                                                       else EVCAOper $1 [] }
         | '(' con SimpleArgs ')'                     { EVCAOper $2 $3 }
         -- TODO more specs here
         | '[' VConArg ']'                            { EVCAList $2 }

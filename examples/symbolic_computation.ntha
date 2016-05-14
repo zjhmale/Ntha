@@ -59,7 +59,7 @@
 
 (data Expr
   (Num Number)
-  (Var [Char])
+  (Var String)
   (Let [Char] Expr Expr)
   (Binop Op (Expr . Expr)))
 
