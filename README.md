@@ -4,11 +4,11 @@
 [![zjhmale](http://b.repl.ca/v1/author-@zjhmale-blue.png)](https://github.com/zjhmale)
 [![Haskell](http://b.repl.ca/v1/language-Haskell-red.png)](https://en.wikipedia.org/wiki/Haskell_(programming_language))
 
-a tiny statically typed functional programming language with global type inference and JIT compiler.
+a tiny statically typed functional programming language.
 
 ## Features
 
-* Global type inferring with optional type annotations.
+* Global type inference with optional type annotations.
 * Lisp flavored syntax with Haskell like semantic inside.
 * Supported basic types: Integer, Character, String, Boolean, Tuple, List and Record.
 * ADTs and pattern matching.
