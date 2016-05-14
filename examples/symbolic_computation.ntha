@@ -52,3 +52,36 @@
 
 (let a (App Add (Num 0) (Num 6)))
 (let b (simplify a))
+
+;; example3
+
+(data Op Add Sub Mul Div)
+
+(data Expr
+  (Num Number)
+  (Var [Char])
+  (Let [Char] Expr Expr)
+  (Binop Op Expr Expr))
+
+(ƒ eval-op [op v1 v2]
+  (match (v1 . v2)
+    (((Just v1) . (Just v2)) => (match op
+                                  (Add => (Just (+ v1 v2)))
+                                  (Sub => (Just (- v1 v2)))
+                                  (Mul => (Just (* v1 v2)))
+                                  (Div => (Just (/ v1 v2)))))
+    (_ => Nothing)))
+
+(ƒ eval [env expr]
+  (match expr
+    ((Num i) => (Just i))
+    ((Var x) => (lookup x env))
+    ((Let x e1 in-e2) => (let [val-x (eval env e1)]
+                           (match val-x
+                             ((Just v) => (eval ((x . v) :: env) in-e2))
+                             (_ => Nothing))))
+    ((Binop op e1 e2) => (let [v1 (eval env e1)
+                               v2 (eval env e2)]
+                           (eval-op op v1 v2)))))
+
+(eval [] (Let "x" (Num 1) (Binop Add (Var "x") (Var "x"))))

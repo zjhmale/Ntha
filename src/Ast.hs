@@ -53,6 +53,7 @@ data Case = Case Pattern [Expr]
 -- temp structure for parser
 data EVConArg = EVCAVar EName
               | EVCAOper EName [EName]
+              | EVCAList Type
               deriving (Show, Eq, Ord)
 
 data EVConstructor = EVConstructor EName [EVConArg]
