@@ -18,7 +18,7 @@ tokens :-
        $eol                        ;
        $white+                     ;
        ";;".*                      ; --comments
-       "{-".*"-}"                  ; --multicomments
+       -- TODO support multiline comments
        "data"                      { \_ -> DATA }
        "match"                     { \_ -> MATCH }
        "if"                        { \_ -> IF }
