@@ -155,3 +155,4 @@ spec = do
       ((PP.text . show) (parseExpr "(data Maybe a (Just a) Nothing)")) `shouldBe` ((PP.text . show) (EProgram [maybeData]))
       parseExpr "(ƒ f [(Just a)] (+ a 1))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "f") [(TConPattern "Just" [IdPattern "a"])] [(EApp (EApp (EVar "+") $ EVar "a") $ ENum 1)]]
       parseExpr "(f (Just 2))" `shouldBe` EProgram [EApp (EVar "f") $ EApp (EVar "Just") $ ENum 2]
+      parseExpr "(let (Just k) (Just 3))" `shouldBe` EProgram [EDestructLetBinding (TConPattern "Just" [IdPattern "k"]) [] [EApp (EVar "Just") $ ENum 3]]

@@ -12,7 +12,9 @@ a tiny statically typed functional programming language.
 * Lisp flavored syntax with Haskell like semantic inside.
 * Support basic types: Integer, Character, String, Boolean, Tuple, List and Record.
 * Support unicode keywords.
+* Support destructuring.
 * ADTs and pattern matching.
+* Support pattern matching on function parameters.
 * Lambdas and curried function by default.
 * Global and Local let binding.
 * Recursive functions.

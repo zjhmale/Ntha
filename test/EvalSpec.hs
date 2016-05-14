@@ -239,6 +239,8 @@ spec = describe "evaluation test" $ do
           let maybeData = EDataDecl name dataType vars [justConstructor, nothingConstructor]
           let f = EDestructLetBinding (IdPattern "f3") [(TConPattern "Just" [IdPattern "a"])] [(EApp (EApp (EVar "+") $ EVar "a") $ ENum 1)]
           let res3 = EApp (EVar "f3") $ EApp (EVar "Just") $ ENum 2
+          let just = EDestructLetBinding (TConPattern "Just" [IdPattern "k"]) [] [EApp (EVar "Just") $ ENum 3]
+          let k = EVar "k"
           runEvalSpecCases [(abpair, Just $ VTuple [VNum 3, makeList [VChar 'd']]),
                             (d, Just $ VTuple [VTuple [VNum 3, VBool True], VTuple [makeList [VChar 't', VChar 'e', VChar 's', VChar 't'], VChar 'c', VNum 3]]),
                             (bool, Just $ VTuple [VTuple [VNum 3, VBool True], VTuple [makeList [VChar 't', VChar 'e', VChar 's', VChar 't'], VChar 'c', VNum 3]]),
@@ -255,4 +257,6 @@ spec = describe "evaluation test" $ do
                             (res2, Just $ VNum 6),
                             (maybeData, Just VUnit),
                             (f, Nothing),
-                            (res3, Just $ VNum 3)]
+                            (res3, Just $ VNum 3),
+                            (just, Just $ Adt "Just" [VNum 3]),
+                            (k, Just $ VNum 3)]

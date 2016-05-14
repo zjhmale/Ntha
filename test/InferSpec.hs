@@ -242,6 +242,8 @@ spec = describe "inference test" $ do
           let maybeData = EDataDecl name dataType vars [justConstructor, nothingConstructor]
           let f = EDestructLetBinding (IdPattern "f3") [(TConPattern "Just" [IdPattern "a"])] [(EApp (EApp (EVar "+") $ EVar "a") $ ENum 1)]
           let res3 = EApp (EVar "f3") $ EApp (EVar "Just") $ ENum 2
+          let just = EDestructLetBinding (TConPattern "Just" [IdPattern "k"]) [] [EApp (EVar "Just") $ ENum 3]
+          let k = EVar "k"
           runInferSpecCases [(abpair, "(Number * [Char])"),
                              (d, "((Number * Boolean) * ([Char] * Char * Number))"),
                              (bool, "((Number * Boolean) * ([Char] * Char * Number))"),
@@ -258,4 +260,6 @@ spec = describe "inference test" $ do
                              (res2, "Number"),
                              (maybeData, "(Maybe α)"),
                              (f, "(Maybe Number) → Number"),
-                             (res3, "Number")]
+                             (res3, "Number"),
+                             (just, "(Maybe Number)"),
+                             (k, "Number")]
