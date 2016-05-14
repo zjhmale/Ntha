@@ -29,14 +29,14 @@ loadlib = do
 
 process :: Env -> String -> IO Env
 process (assumps, builtins) expr = E.catch (do
-                        let ast = parseExpr expr
-                        (assumps', t) <- analyze ast assumps S.empty
-                        let (builtins', v) = eval ast builtins
-                        putStrLn $ show v ++ " : " ++ show t
-                        return (assumps', builtins'))
-                       (\(E.ErrorCall e) -> do
-                        putStrLn e
-                        return emptyEnv)
+                                            let ast = parseExpr expr
+                                            (assumps', t) <- analyze ast assumps S.empty
+                                            let (builtins', v) = eval ast builtins
+                                            putStrLn $ show v ++ " : " ++ show t
+                                            return (assumps', builtins'))
+                                           (\(E.ErrorCall e) -> do
+                                            putStrLn e
+                                            return emptyEnv)
 
 loop :: Env -> InputT IO Env
 loop env = do
