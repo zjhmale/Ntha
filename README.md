@@ -10,7 +10,8 @@ a tiny statically typed functional programming language.
 
 * Global type inference with optional type annotations.
 * Lisp flavored syntax with Haskell like semantic inside.
-* Supported basic types: Integer, Character, String, Boolean, Tuple, List and Record.
+* Support basic types: Integer, Character, String, Boolean, Tuple, List and Record.
+* Support unicode keywords.
 * ADTs and pattern matching.
 * Lambdas and curried function by default.
 * Global and Local let binding.
@@ -22,11 +23,48 @@ a tiny statically typed functional programming language.
 * Module system.
 * error propagation (try / catch).
 * JIT backend.
+* Type alias.
 * Do notation.
 * Rank-N types.
 * Dependent types.
 * Fully type checked lisp like macros.
 * TCO.
+
+## Example
+
+```Clojure
+(data Op Add Sub Mul Div)
+
+(data Expr
+  (Num Number)
+  (Var String)
+  (Let [Char] Expr Expr)
+  (Binop Op (Expr . Expr)))
+
+(ƒ eval-op [op v1 v2]
+  (match (v1 . v2)
+    (((Just v1) . (Just v2)) ⇒ (match op
+                                  (Add ⇒ (Just (+ v1 v2)))
+                                  (Sub ⇒ (Just (- v1 v2)))
+                                  (Mul ⇒ (Just (* v1 v2)))
+                                  (Div ⇒ (Just (/ v1 v2)))))
+    (_ ⇒ Nothing)))
+
+;; could be more concise with do notation.
+(ƒ eval [env expr]
+  (match expr
+    ((Num i) ⇒ (Just i))
+    ((Var x) ⇒ (lookup x env))
+    ((Let x e1 in-e2) ⇒ (let [val-x (eval env e1)]
+                           (match val-x
+                             ((Just v) ⇒ (eval ((x . v) :: env) in-e2))
+                             (_ ⇒ Nothing))))
+    ((Binop op (e1 . e2)) => (let [v1 (eval env e1)
+                                   v2 (eval env e2)]
+                               (eval-op op v1 v2)))))
+
+(eval [] (Let "x" (Num 1) (Binop Add ((Var "x") . (Var "x")))))
+```
 
 ## License
 
