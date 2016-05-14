@@ -152,6 +152,7 @@ spec = describe "inference test" $ do
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
           let res4 = EDestructLetBinding (IdPattern "res4") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
           let map = EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"],Case (TConPattern "Nil" []) [EVar "Nil"]]]
+          let map2 = EDestructLetBinding (IdPattern "map2") [IdPattern "f", IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [EList []],Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map2") $ EVar "f") $ EVar "t"]]]
           let l = EDestructLetBinding (IdPattern "l") [] [EList [ENum 1, ENum 2, ENum 3]]
           let l3 = EDestructLetBinding (IdPattern "l3") [] [EApp (EApp (EVar "map") $ ELambda [Named "x" Nothing] Nothing [EApp (EApp (EVar "=") $ EApp (EApp (EVar "%") $ EVar "x") $ ENum 2) $ ENum 0]) $ EVar "l"]
           let k = EDestructLetBinding (IdPattern "k") [IdPattern "x", IdPattern "y"] [EPatternMatching (ETuple [EVar "x", EVar "y"]) [Case (TuplePattern [NumPattern 0, NumPattern 0]) [ENum 0], Case WildcardPattern [ENum 1]]]
@@ -176,6 +177,7 @@ spec = describe "inference test" $ do
                              (penultimate, "[Number] → Number"),
                              (res4, "Number"),
                              (map, "(α → β) → ([α] → [β])"),
+                             (map2, "(α → β) → ([α] → [β])"),
                              (l, "[Number]"),
                              (l3, "[Boolean]"),
                              (k, "Number → (Number → Number)"),

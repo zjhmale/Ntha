@@ -3,12 +3,12 @@
 (ƒ len [l]
   (match l
     ([] ⇒ 0)
-    ([_ t] ⇒ (+ 1 (len t)))))
+    (_ :: t ⇒ (+ 1 (len t)))))
 
 (ƒ map [f xs]
   (match xs
     ([] ⇒ [])
-    (h :: t ⇒ ((f h) :: (map t f)))))
+    (h :: t ⇒ ((f h) :: (map f t)))))
 
 (ƒ fold [f s xs]
   (match xs
@@ -31,6 +31,6 @@
 (ƒ lookup [name pairs]
   (match pairs
     ([] ⇒ Nothing)
-    ([(k . v) t] ⇒ (if (= name k)
+    ((k . v) :: t ⇒ (if (= name k)
                       (Just v)
                       (lookup name t)))))

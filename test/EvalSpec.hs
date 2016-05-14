@@ -141,8 +141,10 @@ spec = describe "evaluation test" $ do
           let res7 = EDestructLetBinding (IdPattern "res7") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
           let res8 = EDestructLetBinding (IdPattern "res7") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3, ENum 4])]
           let map = EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"],Case (TConPattern "Nil" []) [EVar "Nil"]]]
+          let map2 = EDestructLetBinding (IdPattern "map2") [IdPattern "f", IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [EList []],Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map2") $ EVar "f") $ EVar "t"]]]
           let l = EDestructLetBinding (IdPattern "l") [] [EList [ENum 1, ENum 2, ENum 3]]
           let l3 = EDestructLetBinding (IdPattern "l3") [] [EApp (EApp (EVar "map") $ ELambda [Named "x" Nothing] Nothing [EApp (EApp (EVar "=") $ EApp (EApp (EVar "%") $ EVar "x") $ ENum 2) $ ENum 0]) $ EVar "l"]
+          let l6 = EDestructLetBinding (IdPattern "l6") [] [EApp (EApp (EVar "map2") $ ELambda [Named "x" Nothing] Nothing [EApp (EApp (EVar "=") $ EApp (EApp (EVar "%") $ EVar "x") $ ENum 2) $ ENum 0]) $ EVar "l"]
           let k = EDestructLetBinding (IdPattern "k") [IdPattern "x", IdPattern "y"] [EPatternMatching (ETuple [EVar "x", EVar "y"]) [Case (TuplePattern [NumPattern 0, NumPattern 0]) [ENum 0], Case WildcardPattern [ENum 1]]]
           let fact = EDestructLetBinding (IdPattern "fact") [IdPattern "n"] [EIf (EApp (EApp (EVar "≤") $ EVar "n") $ ENum 1) [ENum 1] [EApp (EApp (EVar "*") $ EVar "n") (EApp (EVar "fact") $ EApp (EApp (EVar "-") $ EVar "n") $ ENum 1)]]
           let f5 = EDestructLetBinding (IdPattern "f5") [] [EApp (EVar "fact") $ ENum 5]
@@ -170,8 +172,10 @@ spec = describe "evaluation test" $ do
                             (res7, Just $ VNum 0),
                             (res8, Just $ VNum 3),
                             (map, Nothing),
+                            (map2, Nothing),
                             (l, Just $ cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil))),
                             (l3, Just $ cons (VBool False) (cons (VBool True) (cons (VBool False) nil))),
+                            (l6, Just $ cons (VBool False) (cons (VBool True) (cons (VBool False) nil))),
                             (k, Nothing),
                             (fact, Nothing),
                             (f5, Just $ VNum 120),
