@@ -55,12 +55,14 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
                                                                                   return (M.insert arg var env, vars ++ [var]))
                                                                                 (M.empty, []) $4
                                                            let dataType = TOper $3 vars
-                                                           let constructors' = map (\(EVConstructor cname cargs) -> let cargs' = map (\arg -> case arg of
-                                                                                                                                                EVCAVar aname -> readEnv env aname
-                                                                                                                                                EVCAOper aname operArgs -> TOper aname $ map (readEnv env) operArgs
-                                                                                                                                                EVCAList t -> TOper "List" [t])
-                                                                                                                                      cargs
-                                                                                                                                      where readEnv scope n = fromMaybe unitT $ M.lookup n scope
+                                                           let constructors' = map (\(EVConstructor cname cargs) -> let cargs' = map getType
+                                                                                                                                     cargs
+                                                                                                                                     where readEnv scope n = fromMaybe unitT $ M.lookup n scope
+                                                                                                                                           getType arg = case arg of
+                                                                                                                                                           EVCAVar aname -> readEnv env aname
+                                                                                                                                                           EVCAOper aname operArgs -> TOper aname $ map (readEnv env) operArgs
+                                                                                                                                                           EVCAList arg' -> TOper "List" [getType arg']
+                                                                                                                                                           EVCATuple args -> TOper "*" (map getType args)
                                                                                                                     in TypeConstructor cname cargs')
                                                                                    $5
                                                            return $ EDataDecl $3 dataType vars constructors' }
@@ -73,8 +75,12 @@ SimpleArgs : {- empty -}                             { [] }
 VConArg : VAR                                        { EVCAVar $1 }
         | con                                        { EVCAOper $1 [] }
         | '(' con SimpleArgs ')'                     { EVCAOper $2 $3 }
-        -- TODO should be more generic for list and tuple pattern, for now just support basic type operator like Number Char etc.
-        | '[' con ']'                                { EVCAList (TOper $2 []) }
+        -- TODO more specs here
+        | '[' VConArg ']'                            { EVCAList $2 }
+        | '(' TupleVConArgs ')'                      { EVCATuple $2 }
+
+TupleVConArgs : VConArg '.' VConArg                  { [$1, $3] }
+              | VConArgs '.' VConArg                 { $1 ++ [$3] }
 
 VConArgs : VConArg                                   { [$1] }
          | VConArg VConArgs                          { $1 : $2 }
