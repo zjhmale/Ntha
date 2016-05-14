@@ -22,6 +22,7 @@ a tiny statically typed functional programming language.
 * Module system.
 * error propagation (try / catch).
 * JIT backend.
+* Do notation.
 * Rank-N types.
 * Dependent types.
 * Fully type checked lisp like macros.

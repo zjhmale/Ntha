@@ -1,0 +1,36 @@
+(data Maybe a (Just a) Nothing)
+
+(ƒ len [l]
+  (match l
+    ([] ⇒ 0)
+    ([_ t] ⇒ (+ 1 (len t)))))
+
+(ƒ map [f xs]
+  (match xs
+    ([] ⇒ [])
+    (h :: t ⇒ ((f h) :: (map t f)))))
+
+(ƒ fold [f s xs]
+  (match xs
+    ([] ⇒ s)
+    (h :: t ⇒ (fold f (f s h) t))))
+
+(ƒ filter [f xs]
+  (match xs
+    ([] ⇒ [])
+    (h :: t ⇒ (if (f h)
+                 (h :: (filter f t))
+                 (filter f t)))))
+
+(ƒ range [x y]
+  (let [rec-range (λ x y res ⇒ (if (> x y)
+                                  res
+                                  (rec-range x (- y 1) (y :: res))))]
+    (rec-range x y [])))
+
+(ƒ lookup [name pairs]
+  (match pairs
+    ([] ⇒ Nothing)
+    ([(k . v) t] ⇒ (if (= name k)
+                      (Just v)
+                      (lookup name t)))))

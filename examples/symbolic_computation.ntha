@@ -1,6 +1,11 @@
 ;; example1
 
-(data Ast (Num Number) (Add Ast Ast) (Sub Ast Ast) (Mul Ast Ast) (Div Ast Ast))
+(data Ast
+  (Num Number)
+  (Add Ast Ast)
+  (Sub Ast Ast)
+  (Mul Ast Ast)
+  (Div Ast Ast))
 
 (ƒ eval [n]
   (match n
@@ -17,7 +22,9 @@
 ;; example2
 
 (data Oper Add Sub)
-(data Expr (Num Number) (App Oper Expr Expr))
+(data Expr
+  (Num Number)
+  (App Oper Expr Expr))
 
 (let a (App Add (Num 5) (Num 6)))
 

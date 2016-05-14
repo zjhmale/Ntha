@@ -10,9 +10,9 @@ $upper = [A-Z]
 $lower = [a-z]
 $digit = [0-9]
 $letter = [$lower $upper]
-$chars = [$lower $upper $digit]
-$eol = [\n]
 $operator = [\+\-\*\/\%\=\>\<]
+$chars = [$lower $upper $digit $operator]
+$eol = [\n]
 
 tokens :-
        $eol                        ;
