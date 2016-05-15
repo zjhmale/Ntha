@@ -1,8 +1,8 @@
 # Ntha Programming Language
 
 [![Build Status](https://travis-ci.org/zjhmale/Ntha.svg?branch=master)](https://travis-ci.org/zjhmale/Ntha)
-[![zjhmale](http://b.repl.ca/v1/author-@zjhmale-blue.png)](https://github.com/zjhmale)
-[![Haskell](http://b.repl.ca/v1/language-Haskell-red.png)](https://en.wikipedia.org/wiki/Haskell_(programming_language))
+[![zjhmale](https://img.shields.io/badge/author-%40zjhmale-blue.svg)](https://github.com/zjhmale)
+[![Haskell](https://img.shields.io/badge/language-haskell-red.svg)](https://en.wikipedia.org/wiki/Haskell_(programming_language))
 
 a tiny statically typed functional programming language.
 
@@ -82,4 +82,4 @@ a tiny statically typed functional programming language.
 
 ## License
 
-[![license BSD](http://b.repl.ca/v1/license-BSD-orange.png)](https://en.wikipedia.org/wiki/BSD_licenses)
+[![license BSD](https://img.shields.io/badge/license-BSD-orange.svg)](https://en.wikipedia.org/wiki/BSD_licenses)
