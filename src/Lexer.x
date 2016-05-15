@@ -24,7 +24,7 @@ tokens :-
        "if"                        { \_ -> IF }
        "ƒ" | "fun"                 { \_ -> DEFUN }
        "λ" | "lambda"              { \_ -> LAMBDA }
-       "⇒" | "=>"                  { \_ -> ARROW }
+       "⇒" | "=>" | "→" | "->"    { \_ -> ARROW }
        "["                         { \_ -> LBRACKET }
        "]"                         { \_ -> RBRACKET }
        "("                         { \_ -> LPAREN }
