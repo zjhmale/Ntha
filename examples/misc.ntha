@@ -87,7 +87,7 @@
 
 (let a 3)
 
-(let f (λ x => (* a x)))
+(let f (λ x → (* a x)))
 
 (let a 5)
 

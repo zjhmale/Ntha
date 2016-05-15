@@ -1,5 +1,5 @@
 name:                ntha
-version:             0.1.0.0
+version:             0.3.0
 synopsis:            a tiny statically typed functional programming language with global type inference and JIT compiler
 description:         Please see README.md
 homepage:            https://github.com/zjhmale/ntha
