@@ -36,7 +36,7 @@ process (assumps, builtins) expr = E.catch (do
                                             return (assumps', builtins'))
                                            (\(E.ErrorCall e) -> do
                                             putStrLn e
-                                            return emptyEnv)
+                                            return (assumps, builtins))
 
 loop :: Env -> InputT IO Env
 loop env = do

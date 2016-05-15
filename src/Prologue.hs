@@ -34,6 +34,8 @@ assumptions = do
                                            ("≥", functionT [intT, intT] boolT),
                                            ("¬", functionT [boolT] boolT),
                                            ("int2str", functionT [intT] strT),
+                                           ("bool2str", functionT [boolT] strT),
+                                           ("asserteq", functionT [tvarB, tvarB] unitT),
                                            ("print", functionT [strT] unitT),
                                            ("error", functionT [strT] tvarB),
                                            ("Cons", mkTCon consConstructor listData),
@@ -55,6 +57,10 @@ builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (
                                             ("≥", binFn (\a b -> VBool $ a >= b)),
                                             ("¬", Fn (\(VBool b) _ -> VBool $ not b)),
                                             ("int2str", Fn (\(VNum n) _ -> strV $ show n)),
+                                            ("bool2str", Fn (\(VBool b) _ -> strV $ show b)),
+                                            ("asserteq", binFn (\a b -> if a == b
+                                                                       then VUnit
+                                                                       else error $ show a ++ " and " ++ show b ++ " not equal.")),
                                             ("print", Fn (\v _ -> trace (desugerStrV v) VUnit)),
                                             ("error", Fn (\v _ -> error $ desugerStrV v)),
                                             ("Cons", binFn (\a b -> cons a b)),

@@ -1,0 +1,96 @@
+;; recursive function
+
+(ƒ fact [n]
+  (if (≤ n 1)
+    1
+    (* n (fact (- n 1)))))
+
+(let f5 (fact 5))
+
+(asserteq f5 120)
+(print (int2str f5))
+
+;; record data type
+
+(let profile {:name "ntha" :age 3})
+
+(asserteq (:name profile) "ntha")
+(print (:name profile))
+
+;; destructuring
+
+(let (a . b) (4 . "d"))
+
+(let d ((4 . true) . ("test" . 'c' . a)))
+
+(let ((_ . bool) . (_ . _ . _)) d)
+
+(asserteq bool true)
+(print (bool2str bool))
+
+;; algebraic data type and pattern matching
+
+(data Tree a Empty-Tree (Leaf a) (Node (Tree a) a (Tree a)))
+
+(let t (Node (Leaf 5) 4 (Leaf 3)))
+
+(ƒ depth
+  [t]
+  (match t
+    (Empty-Tree => 0)
+    ((Leaf _) => 1)
+    ((Node l _ r)  => (inc (max (depth l) (depth r))))))
+
+(asserteq (depth t) 2)
+
+(print (int2str (depth t)))
+
+(asserteq (depth (Leaf 3)) 1)
+
+(print (int2str (depth (Leaf 3))))
+
+(asserteq (depth Empty-Tree) 0)
+
+(print (int2str (depth Empty-Tree)))
+
+;; lambda and high-order function
+
+(let l [1 2])
+
+(ƒ double [x] (* 2 x))
+
+(let ll1 (map double l))
+
+(asserteq ll1 [2 4])
+
+(let ll2 (map (λ x => (* 2 x)) l))
+
+(asserteq ll2 [2 4])
+
+(let l2 [[1 2 3] [4 5 6]])
+
+(asserteq (map len l2) [3 3])
+
+;; curried function
+
+(ƒ add [x y] (+ x y))
+
+(let inc (add 1))
+
+(let three (inc 2))
+
+(asserteq three 3)
+
+(print (int2str three))
+
+;; lexical scope
+
+(let a 3)
+
+(let f (λ x => (* a x)))
+
+(let a 5)
+
+(asserteq (f 5) 15)
+
+(print (int2str (f 5)))

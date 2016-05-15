@@ -34,3 +34,5 @@
     ((k . v) :: t ⇒ (if (= name k)
                       (Just v)
                       (lookup name t)))))
+
+(ƒ max [a b] (if (≥ a b) a b))
