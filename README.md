@@ -32,6 +32,10 @@ a tiny statically typed functional programming language.
 * Fully type checked lisp like macros.
 * TCO.
 
+## Screenshots
+
+![cleantha](./screenshots.gif)
+
 ## Example
 
 ```Clojure
