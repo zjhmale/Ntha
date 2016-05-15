@@ -208,6 +208,8 @@ spec = describe "inference test" $ do
           let l3 = EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]
           let profile = EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]
           let name = EAccessor (EVar "profile") "name"
+          let equal = (EApp (EApp (EVar "=") $ ENum 3) $ ENum 3)
+          let notequal = (EApp (EApp (EVar "≠") $ EBool True) $ EBool False)
           runInferSpecCases [(xb, "Boolean"),
                              (d, "((Number * Boolean) * ([Char] * Char * Number))"),
                              (intsum, "Number"),
@@ -217,7 +219,9 @@ spec = describe "inference test" $ do
                              (s, "[Char]"),
                              (l3, "[Number]"),
                              (profile, "{age: Number, name: [Char]}"),
-                             (name, "[Char]")]
+                             (name, "[Char]"),
+                             (equal, "Boolean"),
+                             (notequal, "Boolean")]
         it "should infer type of destructuring" $ do
           let abpair = EDestructLetBinding (TuplePattern [IdPattern "a", IdPattern "b"]) [] [ETuple [ENum 3, EStr "d"]]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 3, EBool True], ETuple [EStr "test", EChar 'c', EVar "a"]]]

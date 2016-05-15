@@ -11,12 +11,6 @@ import qualified Data.Set as S
 
 type Exclude = S.Set EName
 
--- a little non-sense here, maybe should just use VList
-makeList :: [Value] -> Value
-makeList res = case res of
-                [] -> nil
-                x:xs -> cons x $ makeList xs
-
 evalFn :: Value -> Value -> ValueScope -> Value
 evalFn (Fn f) arg scope = f arg scope
 evalFn _ _ _ = VUnit

@@ -65,6 +65,20 @@ nil = Adt "Nil" []
 cons :: Value -> Value -> Value
 cons h t = Adt "Cons" [h, t]
 
+makeList :: [Value] -> Value
+makeList res = case res of
+                [] -> nil
+                x:xs -> cons x $ makeList xs
+
+strV :: String -> Value
+strV s = makeList $ map (VChar) s
+
+desugerStrV :: Value -> String
+desugerStrV (Adt _ values) = case values of
+                               [] -> ""
+                               _ -> intercalate "" (map desugerStrV values)
+desugerStrV v = show v
+
 -- binary operator
 binFn :: (Value -> Value -> Value) -> Value
 binFn f = Fn (\arg1 _ -> Fn (\arg2 _ -> f arg1 arg2))

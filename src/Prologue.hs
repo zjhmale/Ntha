@@ -5,6 +5,7 @@ import Type
 import Value
 import State
 import TypeScope
+import Debug.Trace
 import qualified Data.Map as M
 
 mkTCon :: TypeConstructor -> Expr -> Type
@@ -14,7 +15,6 @@ assumptions :: Infer TypeScope
 assumptions = do
   tvarA <- makeVariable
   tvarB <- makeVariable
-  tvarC <- makeVariable
   let name = "List"
   let vars = [tvarA]
   let dataType = TOper name vars
@@ -27,11 +27,15 @@ assumptions = do
                                            ("/", functionT [intT, intT] intT),
                                            ("%", functionT [intT, intT] intT),
                                            ("=", functionT [tvarB, tvarB] boolT),
-                                           ("≠", functionT [tvarC, tvarC] boolT),
+                                           ("≠", functionT [tvarB, tvarB] boolT),
                                            ("<", functionT [intT, intT] boolT),
                                            (">", functionT [intT, intT] boolT),
                                            ("≤", functionT [intT, intT] boolT),
                                            ("≥", functionT [intT, intT] boolT),
+                                           ("¬", functionT [boolT] boolT),
+                                           ("int2str", functionT [intT] strT),
+                                           ("print", functionT [strT] unitT),
+                                           ("error", functionT [strT] tvarB),
                                            ("Cons", mkTCon consConstructor listData),
                                            ("Nil", mkTCon nilConstructor listData),
                                            ("inc", functionT [intT] intT),
@@ -49,6 +53,10 @@ builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (
                                             (">", binFn (\a b -> VBool $ a > b)),
                                             ("≤", binFn (\a b -> VBool $ a <= b)),
                                             ("≥", binFn (\a b -> VBool $ a >= b)),
+                                            ("¬", Fn (\(VBool b) _ -> VBool $ not b)),
+                                            ("int2str", Fn (\(VNum n) _ -> strV $ show n)),
+                                            ("print", Fn (\v _ -> trace (desugerStrV v) VUnit)),
+                                            ("error", Fn (\v _ -> error $ desugerStrV v)),
                                             ("Cons", binFn (\a b -> cons a b)),
                                             ("Nil", nil),
                                             ("inc", Fn (\(VNum n) _ -> VNum $ n + 1)),

@@ -75,7 +75,9 @@ a tiny statically typed functional programming language.
                                    v2 (eval env e2)]
                                (eval-op op v1 v2)))))
 
-(eval [] (Let "x" (Num 1) (Binop Add ((Var "x") . (Var "x")))))
+(match (eval [] (Let "x" (Num 1) (Binop Add ((Var "x") . (Var "x")))))
+  ((Just num) ⇒ (print (int2str num)))
+  (Nothing ⇒ (print "oops")))
 ```
 
 ## License

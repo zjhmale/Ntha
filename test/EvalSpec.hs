@@ -205,6 +205,8 @@ spec = describe "evaluation test" $ do
           let l3 = EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]
           let profile = EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]
           let name = EAccessor (EVar "profile") "name"
+          let equal = (EApp (EApp (EVar "=") $ ENum 3) $ ENum 3)
+          let notequal = (EApp (EApp (EVar "≠") $ EBool True) $ EBool False)
           runEvalSpecCases [(xb, Just $ VBool True),
                             (d, Just $ VTuple [VTuple [VNum 4, VBool True], VTuple [cons (VChar 't') (cons (VChar 'e') (cons (VChar 's') (cons (VChar 't') nil))), VChar 'c', VNum 45]]),
                             (intsum, Just $ VNum 15),
@@ -214,7 +216,9 @@ spec = describe "evaluation test" $ do
                             (s, Just $ cons (VChar 's') (cons (VChar 't') (cons (VChar 'r') nil))),
                             (l3, Just $ cons (VNum 1) (cons (VNum 2) (cons (VNum 3) nil))),
                             (profile, Just $ VRecord (M.fromList [("name", cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil)))), ("age", VNum 12)])),
-                            (name, Just $ cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil))))]
+                            (name, Just $ cons (VChar 'n') (cons (VChar 't') (cons (VChar 'h') (cons (VChar 'a') nil)))),
+                            (equal, Just $ VBool True),
+                            (notequal, Just $ VBool True)]
         it "should get value of destructuring" $ do
           let abpair = EDestructLetBinding (TuplePattern [IdPattern "a", IdPattern "b"]) [] [ETuple [ENum 3, EStr "d"]]
           let d = EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 3, EBool True], ETuple [EStr "test", EChar 'c', EVar "a"]]]
