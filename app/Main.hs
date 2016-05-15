@@ -67,8 +67,8 @@ main = do
                 putStrLn prologueMessage
                 runInputT defaultSettings (loop env)
                else do
-                putStrLn "unsupported mode"
-                return emptyEnv
+                file <- readFile arg
+                process env file
     Nothing -> do
       input <- getContents
       process env input
