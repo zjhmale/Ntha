@@ -4,7 +4,9 @@ module Parser where
 import Ast
 import Type
 import Lexer
+import State
 import Control.Monad
+import Data.IORef
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as M
 import System.IO.Unsafe (unsafePerformIO)
@@ -17,6 +19,7 @@ import System.IO.Unsafe (unsafePerformIO)
 %token
     data     { DATA }
     match    { MATCH }
+    type     { TYPE }
     defun    { DEFUN }
     lambda   { LAMBDA }
     if       { IF }
@@ -67,15 +70,22 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
                                                                                    $5
                                                            return $ EDataDecl $3 dataType vars constructors' }
      | '(' let Pattern FormsPlus ')'                 { EDestructLetBinding $3 [] $4 }
+     | '(' type con VConArg ')'                      { unsafePerformIO $ do
+                                                        $4 `seq` modifyIORef aliasMap $ M.insert $3 $4
+                                                        return EUnit }
      | Form                                          { $1 }
 
 SimpleArgs : {- empty -}                             { [] }
            | VAR SimpleArgs                          { $1 : $2 }
 
 VConArg : VAR                                        { EVCAVar $1 }
-        | con                                        { if $1 == "String"
-                                                       then EVCAList (EVCAOper "Char" []) -- special case for String pattern
-                                                       else EVCAOper $1 [] }
+        | con                                        { unsafePerformIO $ do
+                                                        alias <- readIORef aliasMap
+                                                        case M.lookup $1 alias of
+                                                          Just vconarg -> return vconarg
+                                                          Nothing -> if $1 == "String"
+                                                                     then return $ EVCAList (EVCAOper "Char" []) -- special case for String pattern
+                                                                     else return $ EVCAOper $1 [] }
         | '(' con SimpleArgs ')'                     { EVCAOper $2 $3 }
         -- TODO more specs here
         | '[' VConArg ']'                            { EVCAList $2 }
@@ -177,6 +187,9 @@ Atom : boolean                                       { EBool $1 }
      | con                                           { EVar $1 }
 
 {
+aliasMap :: IORef (M.Map String EVConArg)
+aliasMap = createState M.empty
+
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 

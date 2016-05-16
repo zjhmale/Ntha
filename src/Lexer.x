@@ -21,6 +21,7 @@ tokens :-
        -- TODO support multiline comments
        "data"                      { \_ -> DATA }
        "match"                     { \_ -> MATCH }
+       "type"                      { \_ -> TYPE }
        "if"                        { \_ -> IF }
        "ƒ" | "fun"                 { \_ -> DEFUN }
        "λ" | "lambda"              { \_ -> LAMBDA }
@@ -48,6 +49,7 @@ tokens :-
 {
 data Token = DATA
            | MATCH
+           | TYPE
            | DEFUN
            | LAMBDA
            | IF

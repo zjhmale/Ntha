@@ -55,11 +55,13 @@
 
 ;; example3
 
+(type Name String)
+
 (data Op Add Sub Mul Div)
 
 (data Expr
   (Num Number)
-  (Var String)
+  (Var Name)
   (Let [Char] Expr Expr)
   (Binop Op (Expr . Expr)))
 
