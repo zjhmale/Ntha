@@ -22,8 +22,12 @@ import System.IO.Unsafe (unsafePerformIO)
     type     { TYPE }
     defun    { DEFUN }
     lambda   { LAMBDA }
+    monad    { MONAD }
+    do       { DO }
+    return   { RETURN }
     if       { IF }
-    arrow    { ARROW }
+    rarrow   { RARROW }
+    larrow   { LARROW }
     con      { CON $$ }
     '['      { LBRACKET }
     ']'      { RBRACKET }
@@ -73,6 +77,9 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
      | '(' type con VConArg ')'                      { unsafePerformIO $ do
                                                         $4 `seq` modifyIORef aliasMap $ M.insert $3 $4
                                                         return EUnit }
+     | '(' monad con Form ')'                        { unsafePerformIO $ do
+                                                        $4 `seq` modifyIORef monadMap $ M.insert $3 $4
+                                                        return $ EDestructLetBinding (IdPattern $3) [] [$4] }
      | Form                                          { $1 }
 
 SimpleArgs : {- empty -}                             { [] }
@@ -115,11 +122,36 @@ binding : Pattern Form                               { ELetBinding $1 $2 [] }
 bindings : binding                                   { [$1] }
          | binding bindings                          { $1 : $2 }
 
+bind : Form                                          { Single $1 }
+     | '(' return Form ')'                           { Return $3 }
+     | '(' VAR larrow Form ')'                       { Bind $2 $4 }
+
+binds : bind                                         { [$1] }
+      | bind binds                                   { $1 : $2 }
+
 Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
-     | '(' lambda Nameds arrow FormsPlus ')'         { ELambda $3 Nothing $5 }
-     | '(' lambda Nameds ':' con arrow FormsPlus ')' { ELambda $3 (Just (TOper $5 [])) $7 }
+     | '(' lambda Nameds rarrow FormsPlus ')'        { ELambda $3 Nothing $5 }
+     | '(' lambda Nameds ':' con rarrow FormsPlus ')'{ ELambda $3 (Just (TOper $5 [])) $7 }
      | '(' let '[' bindings ']' FormsPlus ')'        { head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) $6 $4 }
      | '(' if Form Form Form ')'                     { EIf $3 [$4] [$5] }
+     | '(' do con binds ')'                          { unsafePerformIO $ do
+                                                        monads <- readIORef monadMap
+                                                        return $ case M.lookup $3 monads of
+                                                                   Just (ERecord pairs) -> case M.lookup "return" pairs of
+                                                                                             Just rtn -> case M.lookup ">>=" pairs of
+                                                                                                           Just bind -> foldr (\b next -> case next of
+                                                                                                                                            EUnit -> case b of
+                                                                                                                                                       Bind n e -> error "illegal do expression"
+                                                                                                                                                       Return e -> EApp rtn e
+                                                                                                                                                       Single e -> e
+                                                                                                                                            _ -> case b of
+                                                                                                                                                    Bind n e -> EApp (EApp bind e) (ELambda [Named n Nothing] Nothing [next])
+                                                                                                                                                    Return e -> EApp rtn e
+                                                                                                                                                    Single e -> e)
+                                                                                                                              EUnit $4
+                                                                                                           Nothing -> error $ "bind function is not defined for " ++ $3 ++ " monad"
+                                                                                             Nothing -> error $ "return function is not defined for " ++ $3 ++ " monad"
+                                                                   _ -> error $ $3 ++ " monad is not defined" }
      | '(' ListForms ')'                             { $2 }
      | '(' TupleFroms ')'                            { ETuple $2 }
      | '(' Form FormsPlus ')'                        { foldl (\oper param -> (EApp oper param)) $2 $3 }
@@ -173,7 +205,7 @@ ListPatterns : Pattern '::' Pattern                  { TConPattern "Cons" [$1, $
 ListDestructPats : Pattern '::' Pattern              { TConPattern "Cons" [$1, TConPattern "Cons" [$3, TConPattern "Nil" []]] }
                  | Pattern '::' ListDestructPats     { TConPattern "Cons" [$1, $3] }
 
-Case : '(' Pattern arrow FormsPlus ')'               { Case $2 $4 }
+Case : '(' Pattern rarrow FormsPlus ')'              { Case $2 $4 }
 
 Cases : Case                                         { [$1] }
       | Case Cases                                   { $1 : $2 }
@@ -189,6 +221,9 @@ Atom : boolean                                       { EBool $1 }
 {
 aliasMap :: IORef (M.Map String EVConArg)
 aliasMap = createState M.empty
+
+monadMap :: IORef (M.Map String Expr)
+monadMap = createState M.empty
 
 parseError :: [Token] -> a
 parseError _ = error "Parse error"

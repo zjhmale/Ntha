@@ -23,9 +23,13 @@ tokens :-
        "match"                     { \_ -> MATCH }
        "type"                      { \_ -> TYPE }
        "if"                        { \_ -> IF }
+       "monad"                     { \_ -> MONAD }
+       "do"                        { \_ -> DO }
+       "return"                    { \_ -> RETURN }
        "ƒ" | "fun"                 { \_ -> DEFUN }
        "λ" | "lambda"              { \_ -> LAMBDA }
-       "⇒" | "=>" | "→" | "->"    { \_ -> ARROW }
+       "⇒" | "=>" | "→" | "->"    { \_ -> RARROW }
+       "⇐" | "<=" | "←" | "<-"   { \_ -> LARROW }
        "["                         { \_ -> LBRACKET }
        "]"                         { \_ -> RBRACKET }
        "("                         { \_ -> LPAREN }
@@ -52,8 +56,12 @@ data Token = DATA
            | TYPE
            | DEFUN
            | LAMBDA
+           | MONAD
+           | DO
+           | RETURN
            | IF
-           | ARROW
+           | RARROW
+           | LARROW
            | LBRACKET
            | RBRACKET
            | LPAREN
@@ -65,7 +73,7 @@ data Token = DATA
            | COLON
            | DOUBLECOLON
            | VAR EName
-           | CON EName -- constructor
+           | CON EName -- constructor names or uppercase symbols
            | LET
            | KEYWORD String
            | OPERATOR String

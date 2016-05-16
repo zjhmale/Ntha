@@ -32,6 +32,10 @@ data Expr = EVar EName
           | EProgram [Expr]
           deriving (Eq, Ord)
 
+data Bind = Bind EName Expr
+          | Return Expr
+          | Single Expr
+
 data TypeConstructor = TypeConstructor EName [Type]
                        deriving (Eq, Ord)
 

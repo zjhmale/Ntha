@@ -89,7 +89,7 @@ stringOfAdt tag values = tag ++ case values of
                                   _ -> " " ++ intercalate " | " (map show values)
 
 stringOfPairs :: M.Map String Value -> String
-stringOfPairs pairs = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ show v) pairs) ++ "}"
+stringOfPairs pairs = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ " : " ++ show v) pairs) ++ "}"
 
 instance Show Value where
   show (VNum i) = show i

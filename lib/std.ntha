@@ -1,5 +1,10 @@
 (data Maybe a (Just a) Nothing)
 
+(monad Maybe {:return (λ x → (Just x))
+              :>>= (λ x f → (match x
+                              ((Just x) → (f x))
+                              (Nothing → Nothing)))})
+
 (ƒ len [l]
   (match l
     ([] ⇒ 0)
