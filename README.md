@@ -19,13 +19,13 @@ a tiny statically typed functional programming language.
 * Global and Local let binding.
 * Recursive functions.
 * If-then-else control flow.
+* Type alias.
 
 ## Future Works
 
 * Module system.
 * error propagation (try / catch).
 * JIT backend.
-* Type alias.
 * Do notation.
 * Rank-N types.
 * Dependent types.
@@ -39,11 +39,13 @@ a tiny statically typed functional programming language.
 ## Example
 
 ```Clojure
+(type Name String)
+
 (data Op Add Sub Mul Div)
 
 (data Expr
   (Num Number)
-  (Var String)
+  (Var Name)
   (Let [Char] Expr Expr)
   (Binop Op (Expr . Expr)))
 

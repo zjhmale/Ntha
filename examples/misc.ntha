@@ -10,6 +10,15 @@
 (asserteq f5 120)
 (print (int2str f5))
 
+(ƒ fact-wrap [n]
+  (let [fact (λ n → (if (≤ n 1)
+                         1
+                         (* n (fact (- n 1)))))]
+  (fact n)))
+
+(let f5 (fact-wrap 5))
+(print (int2str f5))
+
 ;; record data type
 
 (let profile {:name "ntha" :age 3})
