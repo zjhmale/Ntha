@@ -41,38 +41,68 @@ a tiny statically typed functional programming language.
 
 ```Clojure
 (type Name String)
+(type Env [(Name . Expr)])
 
-(data Op Add Sub Mul Div)
+(data Op Add Sub Mul Div Less Iff)
 
 (data Expr
   (Num Number)
+  (Bool Boolean)
   (Var Name)
+  (If Expr Expr Expr)
   (Let [Char] Expr Expr)
+  (Lambda Name Expr)
+  (Closure Expr Env)
+  (App Expr Expr)
   (Binop Op (Expr . Expr)))
 
 (let op-map {:add +
              :sub -
              :mul *
-             :div /})
+             :div /
+             :less <
+             :iff =})
 
-(ƒ do-eval [fn (v1 . v2)]
-  (Just (+ v1 v2)))
+(ƒ arith-eval [fn (v1 . v2)]
+  (Just (Num (fn v1 v2))))
+
+(ƒ logic-eval [fn (v1 . v2)]
+  (Just (Bool (fn v1 v2))))
 
 (let eval-op
   (λ op v1 v2 ⇒
     (match (v1 . v2)
-      (((Just v1) . (Just v2)) ⇒
+      (((Just (Num v1)) . (Just (Num v2))) ⇒
         (match op
-          (Add ⇒ (do-eval (:add op-map) (v1 . v2)))
-          (Sub ⇒ (do-eval (:sub op-map) (v1 . v2)))
-          (Mul ⇒ (do-eval (:mul op-map) (v1 . v2)))
-          (Div ⇒ (do-eval (:div op-map) (v1 . v2)))))
+          (Add ⇒ (arith-eval (:add op-map) (v1 . v2)))
+          (Sub ⇒ (arith-eval (:sub op-map) (v1 . v2)))
+          (Mul ⇒ (arith-eval (:mul op-map) (v1 . v2)))
+          (Div ⇒ (arith-eval (:div op-map) (v1 . v2)))
+          (Less ⇒ (logic-eval (:less op-map) (v1 . v2)))
+          (Iff ⇒ (logic-eval (:iff op-map) (v1 . v2)))))
       (_ ⇒ Nothing))))
 
+;; <fun> : [([Char] * Expr)] → (Expr → (Maybe Expr))
 (ƒ eval [env expr]
   (match expr
-    ((Num i) ⇒ (Just i))
-    ((Var x) ⇒ (lookup x env))
+    ((Num _) ⇒ (Just expr))
+    ((Bool _) → (Just expr))
+    ((Var x) ⇒ (do Maybe
+                 (val ← (lookup x env))
+                 (return val)))
+    ((If cond then else) → (match (eval env cond)
+                             ((Just (Bool true)) → (eval env then))
+                             ((Just (Bool false)) → (eval env else))
+                             (_ → (error "condition should be evaluate to a boolean value"))))
+    ((Lambda _ _) → (Just (Closure expr env)))
+    ((App fn arg) → (let [fnv (eval env fn)
+                          argv (eval env arg)]
+                      (match fnv
+                        ((Just (Closure (Lambda x e) innerenv)) →
+                            (do Maybe
+                              (argv ← (eval env arg))
+                              (eval ((x . argv) :: innerenv) e)))
+                        (_ → (error "should apply arg to a function")))))
     ((Let x e1 in-e2) ⇒ (do Maybe
                           (v ← (eval env e1))
                           (eval ((x . v) :: env) in-e2)))
@@ -80,8 +110,8 @@ a tiny statically typed functional programming language.
                                    v2 (eval env e2)]
                                (eval-op op v1 v2)))))
 
-(match (eval [] (Let "x" (Num 1) (Binop Add ((Var "x") . (Var "x")))))
-  ((Just num) ⇒ (print (int2str num)))
+(match (eval [] (Let "x" (Num 2) (Let "f" (Lambda "y" (Binop Mul ((Var "x") . (Var "y")))) (App (Var "f") (Num 3)))))
+  ((Just (Num num)) ⇒ (print (int2str num)))
   (Nothing ⇒ (error "oops")))
 ```
 

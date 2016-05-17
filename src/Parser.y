@@ -82,6 +82,7 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
                                                         return $ EDestructLetBinding (IdPattern $3) [] [$4] }
      | Form                                          { $1 }
 
+-- TODO should support arg parameter such as (Maybe Number)
 SimpleArgs : {- empty -}                             { [] }
            | VAR SimpleArgs                          { $1 : $2 }
 
