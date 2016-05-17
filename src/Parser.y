@@ -142,13 +142,16 @@ Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
                                                                                                            Just bind -> foldr (\b next -> case next of
                                                                                                                                             EUnit -> case b of
                                                                                                                                                        Bind n e -> error "illegal do expression"
-                                                                                                                                                       Return e -> EApp rtn e
+                                                                                                                                                       Return e -> EApp newRtn e
                                                                                                                                                        Single e -> e
                                                                                                                                             _ -> case b of
-                                                                                                                                                    Bind n e -> EApp (EApp bind e) (ELambda [Named n Nothing] Nothing [next])
-                                                                                                                                                    Return e -> EApp rtn e
+                                                                                                                                                    Bind n e -> EApp (EApp newBind e) (ELambda [Named n Nothing] Nothing [next])
+                                                                                                                                                    Return e -> EApp newRtn e
                                                                                                                                                     Single e -> e)
                                                                                                                               EUnit $4
+                                                                                                                        where
+                                                                                                                        newBind = aliasArgName bind
+                                                                                                                        newRtn = aliasArgName rtn
                                                                                                            Nothing -> error $ "bind function is not defined for " ++ $3 ++ " monad"
                                                                                              Nothing -> error $ "return function is not defined for " ++ $3 ++ " monad"
                                                                    _ -> error $ $3 ++ " monad is not defined" }
@@ -224,6 +227,11 @@ aliasMap = createState M.empty
 
 monadMap :: IORef (M.Map String Expr)
 monadMap = createState M.empty
+
+aliasArgName :: Expr -> Expr
+aliasArgName expr@(ELambda nameds t exprs) = substName subrule expr
+  where
+  subrule = M.fromList $ foldl (\rule (Named name _) -> rule ++ [(name, name ++ "__monadarg__")]) [] nameds
 
 parseError :: [Token] -> a
 parseError _ = error "Parse error"

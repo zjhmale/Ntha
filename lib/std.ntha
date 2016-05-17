@@ -2,7 +2,7 @@
 
 (monad Maybe {:return (λ x → (Just x))
               :>>= (λ x f → (match x
-                              ((Just x) → (f x))
+                              ((Just v) → (f v))
                               (Nothing → Nothing)))})
 
 (ƒ len [l]

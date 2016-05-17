@@ -17,18 +17,18 @@ evalFn _ _ _ = VUnit
 
 chainingFn :: EName -> Value -> Value
 chainingFn argName next = Fn (\oarg _ -> Fn (\arg scope -> let margs = case oarg of
-                                                                       FnApArgs pairs -> let v = fromMaybe VUnit $ M.lookup "*" pairs
-                                                                                        in FnApArgs $ M.insert "*" arg $ M.insert argName v pairs
-                                                                       _ -> FnApArgs $ M.fromList [(argName, oarg), ("*", arg)]
+                                                                       FnApArgs pairs -> let v = fromMaybe VUnit $ M.lookup "***" pairs
+                                                                                        in FnApArgs $ M.insert "***" arg $ M.insert argName v pairs
+                                                                       _ -> FnApArgs $ M.fromList [(argName, oarg), ("***", arg)]
                                                          in evalFn next margs scope))
 
 chaininLastFn :: EName -> [Expr] -> Value
 chaininLastFn argName body = Fn (\arg scope -> let scope' = case arg of
                                                              FnApArgs pairs -> foldl (\env (k, v) -> insert k v env)
                                                                                     scope
-                                                                                    (M.toList $ M.insert argName (fromMaybe VUnit $ M.lookup "*" pairs) pairs)
+                                                                                    (M.toList $ M.insert argName (fromMaybe VUnit $ M.lookup "***" pairs) pairs)
                                                              _ -> insert argName arg scope
-                                              in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
+                                              in snd $ foldl (\(env, val) instr -> val `seq` eval instr env) (scope', VUnit) body)
 
 destrChainingFn :: Pattern -> Value -> Value
 destrChainingFn pat next = Fn (\oarg _ -> Fn (\arg scope -> let margs = case oarg of
@@ -42,7 +42,7 @@ destrChaininLastFn pat body = Fn (\arg scope -> let scope' = case arg of
                                                                                                          scope args
                                                                                            in define pat freeVal s
                                                               _ -> define pat arg scope
-                                               in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
+                                               in snd $ foldl (\(env, val) instr -> val `seq` eval instr env) (scope', VUnit) body)
 
 tConChainingFn :: Tag -> Value -> Value
 tConChainingFn tag next = Fn (\oarg _ -> Fn (\arg scope -> let targs = case oarg of
@@ -186,7 +186,7 @@ eval expr scope = case expr of
                                                                     else (scope, evalInstrs elseInstrs)
                                                                     where
                                                                     evalInstrs instrs = let scope' = child scope
-                                                                                        in snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) instrs
+                                                                                        in snd $ foldl (\(env, val) instr -> val `seq` eval instr env) (scope', VUnit) instrs
                                                           _ -> error $ "Error while evaluating " ++ show expr ++ ": the condition is not a boolean"
                     EPatternMatching input cases -> findPattern inputV cases
                       where (_, inputV) = eval input scope
@@ -194,13 +194,13 @@ eval expr scope = case expr of
                             findPattern val [] = error $ "Match exception: " ++ show input ++ " = " ++ show val ++ " didn't match any case of " ++ show expr
                             findPattern val ((Case pat instrs):cs) = let (scope', isMatch) = match val pat $ child scope
                                                                      in if isMatch
-                                                                        then (scope, snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) instrs)
+                                                                        then (scope, snd $ foldl (\(env, val') instr -> val' `seq` eval instr env) (scope', VUnit) instrs)
                                                                         else findPattern val cs
                     ELetBinding name def body -> let (scope', _) = eval (EDestructLetBinding name [] [def]) scope
-                                                in (scope, snd $ foldl (\(env, _) instr -> eval instr env) (scope', VUnit) body)
+                                                in (scope, snd $ foldl (\(env, val) instr -> val `seq` eval instr env) (scope', VUnit) body)
                     EDestructLetBinding main args instrs -> if length args == 0
                                                            -- define variable
-                                                           then let (_, val) = foldl (\(env, _) instr -> eval instr env) (child scope, VUnit) instrs
+                                                           then let (_, val) = foldl (\(env, val') instr -> val' `seq` eval instr env) (child scope, VUnit) instrs
                                                                 in (define main val scope, val)
                                                            -- define function
                                                            else case main of

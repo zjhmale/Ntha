@@ -3,6 +3,7 @@
 module Ast where
 
 import Type
+import Data.Maybe (fromMaybe)
 import Data.List (intercalate)
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
@@ -63,6 +64,29 @@ data EVConArg = EVCAVar EName
 
 data EVConstructor = EVConstructor EName [EVConArg]
                      deriving (Show, Eq, Ord)
+
+substName :: M.Map EName EName -> Expr -> Expr
+substName subrule (EVar name) = EVar $ fromMaybe name $ M.lookup name subrule
+substName subrule (EAccessor expr field) = EAccessor (substName subrule expr) field
+substName subrule (EList exprs) = EList $ map (substName subrule) exprs
+substName subrule (ETuple exprs) = ETuple $ map (substName subrule) exprs
+substName subrule (ERecord pairs) = ERecord $ M.map (substName subrule) pairs
+substName subrule (ELambda nameds t exprs) = ELambda newNames t newExprs
+  where
+  newNames = map (\(Named name t') -> Named (fromMaybe name $ M.lookup name subrule) t') nameds
+  newExprs = map (substName subrule) exprs
+substName subrule (EApp fn arg) = EApp (substName subrule fn) (substName subrule arg)
+substName subrule (EIf cond thenInstrs elseInstrs) = EIf newCond newThenInstrs newElseInstrs
+  where
+  newCond = substName subrule cond
+  newThenInstrs = map (substName subrule) thenInstrs
+  newElseInstrs = map (substName subrule) elseInstrs
+substName subrule (EPatternMatching expr cases) = EPatternMatching newExpr newCases
+  where
+  newCases = map (\(Case pat exprs) -> Case pat (map (substName subrule) exprs)) cases
+  newExpr = substName subrule expr
+substName subrule (ELetBinding pat expr exprs) = ELetBinding pat (substName subrule expr) $ map (substName subrule) exprs
+substName _ e = e
 
 tab :: EIndent -> String
 tab i = intercalate "" $ take i $ repeat "\t"

@@ -103,3 +103,10 @@
 (asserteq (f 5) 15)
 
 (print (int2str (f 5)))
+
+;; monad
+
+(do Maybe
+  (a <- (Just 3))
+  (b <- (Just (+ a 3)))
+  (return (* b 3)))
