@@ -94,7 +94,7 @@ a tiny statically typed functional programming language.
     ((If cond then else) → (match (eval env cond)
                              ((Just (Bool true)) → (eval env then))
                              ((Just (Bool false)) → (eval env else))
-                             (_ → (error "condition should be evaluate to a boolean value"))))
+                             (_ → (error "condition should be evaluated to a boolean value"))))
     ((Lambda _ _) → (Just (Closure expr env)))
     ((App fn arg) → (let [fnv (eval env fn)
                           argv (eval env arg)]
@@ -107,7 +107,7 @@ a tiny statically typed functional programming language.
     ((Let x e1 in-e2) ⇒ (do Maybe
                           (v ← (eval env e1))
                           (eval ((x . v) :: env) in-e2)))
-    ;; use fix point combinator approach "Turing-complete"
+    ;; use fix point combinator to approach "Turing-complete"
     ((LetRec x e1 in-e2) → (eval env (Let "Y" (Lambda "h" (App (Lambda "f" (App (Var "f") (Var "f")))
                                                                (Lambda "f" (App (Var "h")
                                                                                 (Lambda "n" (App (App (Var "f") (Var "f"))
