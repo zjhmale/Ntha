@@ -51,6 +51,7 @@ a tiny statically typed functional programming language.
   (Var Name)
   (If Expr Expr Expr)
   (Let [Char] Expr Expr)
+  (LetRec Name Expr Expr)
   (Lambda Name Expr)
   (Closure Expr Env)
   (App Expr Expr)
@@ -106,14 +107,22 @@ a tiny statically typed functional programming language.
     ((Let x e1 in-e2) ⇒ (do Maybe
                           (v ← (eval env e1))
                           (eval ((x . v) :: env) in-e2)))
+    ;; use fix point combinator approach "Turing-complete"
+    ((LetRec x e1 in-e2) → (eval env (Let "Y" (Lambda "h" (App (Lambda "f" (App (Var "f") (Var "f")))
+                                                               (Lambda "f" (App (Var "h")
+                                                                                (Lambda "n" (App (App (Var "f") (Var "f"))
+                                                                                                 (Var "n")))))))
+                                              (Let x (App (Var "Y") (Lambda x e1))
+                                                     in-e2))))
     ((Binop op (e1 . e2)) => (let [v1 (eval env e1)
                                    v2 (eval env e2)]
                                (eval-op op v1 v2)))))
 
-;; use fix point combinator approach "Turing-complete"
-(match (eval [] (Let "Y" (Lambda "h" (App (Lambda "f" (App (Var "f") (Var "f"))) (Lambda "f" (App (Var "h") (Lambda "n" (App (App (Var "f") (Var "f")) (Var "n")))))))
-                         (Let "fact" (App (Var "Y") (Lambda "g" (Lambda "n" (If (Binop Less ((Var "n") . (Num 2))) (Num 1) (Binop Mul ((Var "n") . (App (Var "g") (Binop Sub ((Var "n") . (Num 1))))))))))
-                                     (App (Var "fact") (Num 5)))))
+(match (eval [] (LetRec "fact" (Lambda "n" (If (Binop Less ((Var "n") . (Num 2)))
+                                               (Num 1)
+                                               (Binop Mul ((Var "n") . (App (Var "fact")
+                                                                            (Binop Sub ((Var "n") . (Num 1))))))))
+                               (App (Var "fact") (Num 5))))
   ((Just (Num num)) ⇒ (print (int2str num)))
   (Nothing ⇒ (error "oops")))
 ```
