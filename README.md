@@ -20,13 +20,14 @@ a tiny statically typed functional programming language.
 * Recursive functions.
 * If-then-else control flow.
 * Type alias.
+* Do notation.
 
 ## Future Works
 
 * Module system.
 * error propagation (try / catch).
 * JIT backend.
-* Do notation.
+* Type-classes.
 * Rank-N types.
 * Dependent types.
 * Fully type checked lisp like macros.
@@ -68,22 +69,20 @@ a tiny statically typed functional programming language.
           (Div ⇒ (do-eval (:div op-map) (v1 . v2)))))
       (_ ⇒ Nothing))))
 
-;; could be more concise with do notation.
 (ƒ eval [env expr]
   (match expr
     ((Num i) ⇒ (Just i))
     ((Var x) ⇒ (lookup x env))
-    ((Let x e1 in-e2) ⇒ (let [val-x (eval env e1)]
-                           (match val-x
-                             ((Just v) ⇒ (eval ((x . v) :: env) in-e2))
-                             (_ ⇒ Nothing))))
+    ((Let x e1 in-e2) ⇒ (do Maybe
+                          (v ← (eval env e1))
+                          (eval ((x . v) :: env) in-e2)))
     ((Binop op (e1 . e2)) => (let [v1 (eval env e1)
                                    v2 (eval env e2)]
                                (eval-op op v1 v2)))))
 
 (match (eval [] (Let "x" (Num 1) (Binop Add ((Var "x") . (Var "x")))))
   ((Just num) ⇒ (print (int2str num)))
-  (Nothing ⇒ (print "oops")))
+  (Nothing ⇒ (error "oops")))
 ```
 
 ## License
