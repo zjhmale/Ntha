@@ -17,7 +17,7 @@ addons:
     sources:
     - hvr-ghc
     packages:
-    - ghc-7.10.2
+    - ghc-7.10.3
 
 script:
   - stack --no-terminal --skip-ghc-check test

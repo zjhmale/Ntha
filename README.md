@@ -110,7 +110,10 @@ a tiny statically typed functional programming language.
                                    v2 (eval env e2)]
                                (eval-op op v1 v2)))))
 
-(match (eval [] (Let "x" (Num 2) (Let "f" (Lambda "y" (Binop Mul ((Var "x") . (Var "y")))) (App (Var "f") (Num 3)))))
+;; use fix point combinator approach "Turing-complete"
+(match (eval [] (Let "Y" (Lambda "h" (App (Lambda "f" (App (Var "f") (Var "f"))) (Lambda "f" (App (Var "h") (Lambda "n" (App (App (Var "f") (Var "f")) (Var "n")))))))
+                         (Let "fact" (App (Var "Y") (Lambda "g" (Lambda "n" (If (Binop Less ((Var "n") . (Num 2))) (Num 1) (Binop Mul ((Var "n") . (App (Var "g") (Binop Sub ((Var "n") . (Num 1))))))))))
+                                     (App (Var "fact") (Num 5)))))
   ((Just (Num num)) ⇒ (print (int2str num)))
   (Nothing ⇒ (error "oops")))
 ```
