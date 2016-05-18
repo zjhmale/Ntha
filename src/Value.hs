@@ -70,6 +70,14 @@ makeList res = case res of
                 [] -> nil
                 x:xs -> cons x $ makeList xs
 
+getElements :: Value -> [Value]
+getElements l = case l of
+                  Adt "Cons" [h, t] -> h : (getElements t)
+                  _ -> []
+
+reverseList :: Value -> Value
+reverseList l = makeList . reverse . getElements $ l
+
 strV :: String -> Value
 strV s = makeList $ map (VChar) s
 

@@ -40,4 +40,14 @@
                       (Just v)
                       (lookup name t)))))
 
+(ƒ conj [e l]
+  (reverse (e :: (reverse l))))
+
+(ƒ concat [l1 l2]
+  (match l2
+    ([] → l1)
+    (h :: t → (concat (conj h l1) t))))
+
+(asserteq (concat [1 2 3] [4 5 6]) [1 2 3 4 5 6])
+
 (ƒ max [a b] (if (≥ a b) a b))

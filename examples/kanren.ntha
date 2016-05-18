@@ -1,0 +1,6 @@
+(ƒ fail [x] [])
+(ƒ successd [x] [x])
+
+(asserteq (fail 3) [])
+(asserteq (successd 3) [3])
+
