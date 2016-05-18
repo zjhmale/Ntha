@@ -80,4 +80,12 @@
 
 (asserteq (tail [1 2 3]) [2 3])
 
+(ƒ take [n l]
+  (if (> n 0)
+    ((head l) :: (take (- n 1) (tail l)))
+    []))
+
+(asserteq (take 3 [1 2 3 4 5 6]) [1 2 3])
+(asserteq (take 2 "_.x") "_.")
+
 (ƒ max [a b] (if (≥ a b) a b))

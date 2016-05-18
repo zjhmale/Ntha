@@ -49,3 +49,63 @@
                            (disj* [succeed fail])])])
                   100)
           [100 101 110])
+
+;;logic variable
+(ƒ lvar [name] (concat "_." name))
+
+(ƒ lvar? [var]
+  (∧ (string? var) (= (take 2 var) "_.")))
+
+(asserteq (lvar? (lvar "ntha")) true)
+(asserteq (lvar? "ntha") false)
+
+(let va = (lvar "a"))
+(let vb = (lvar "b"))
+(let vc = (lvar "c"))
+(let vd = (lvar "d"))
+
+(let empty-subrule [])
+
+(ƒ extend-subrule [var val subrule]
+  ((var . val) :: subrule))
+
+(let s (extend-subrule (lvar "x") (lvar "y") empty-subrule))
+(asserteq s [("_.x" . "_.y")])
+
+(let s (extend-subrule (lvar "y") "1" s))
+(asserteq s [("_.y" . "1") ("_.x" . "_.y")])
+
+(ƒ lookup-subrule [var subrule]
+  (if (¬ (lvar? var))
+    var
+    (match (lookup var subrule)
+      ((Just val) → (lookup-subrule val subrule))
+      (Nothing → var))))
+
+(asserteq (lookup-subrule (lvar "y") s) "1")
+(asserteq (lookup-subrule (lvar "x") s) "1")
+
+(ƒ unify [t1 t2 subrule]
+  (let [t1 (lookup-subrule t1 subrule)
+        t2 (lookup-subrule t2 subrule)]
+    (if (= t1 t2)
+      (Just s)
+      (if (lvar? t1)
+        (Just (extend-subrule t1 t2 subrule))
+        (if (lvar? t2)
+          (Just (extend-subrule t2 t1 subrule))
+          Nothing)))))
+
+(asserteq (unify va vb empty-subrule)
+          (Just [("_.a" . "_.b")]))
+
+(asserteq (do Maybe
+            (rule ← (unify va vb empty-subrule))
+            (unify va "1" rule))
+          (Just [("_.b" . "1") ("_.a" . "_.b")]))
+
+(asserteq (do Maybe
+            (rule1 ← (unify va vb empty-subrule))
+            (rule2 ← (unify va "1" rule1))
+            (return (lookup-subrule vb rule2)))
+          (Just "1"))
