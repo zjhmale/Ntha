@@ -26,6 +26,7 @@ a tiny statically typed functional programming language.
 
 * Module system.
 * error propagation (try / catch).
+* Lazyness.
 * JIT backend.
 * Type-classes.
 * Rank-N types.
@@ -33,9 +34,9 @@ a tiny statically typed functional programming language.
 * Fully type checked lisp like macros.
 * TCO.
 
-## Screenshots
+## Screenshot
 
-![cleantha](./screenshots.gif)
+![cleantha](./screenshot.gif)
 
 ## Example
 

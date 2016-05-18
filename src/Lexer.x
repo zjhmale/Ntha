@@ -29,8 +29,8 @@ tokens :-
        "return"                    { \_ -> RETURN }
        "ƒ" | "fun"                 { \_ -> DEFUN }
        "λ" | "lambda"              { \_ -> LAMBDA }
-       "⇒" | "=>" | "→" | "->"    { \_ -> RARROW }
-       "⇐" | "<=" | "←" | "<-"   { \_ -> LARROW }
+       "⇒" | "=>" | "→" | "->"     { \_ -> RARROW }
+       "⇐" | "<=" | "←" | "<-"     { \_ -> LARROW }
        "["                         { \_ -> LBRACKET }
        "]"                         { \_ -> RBRACKET }
        "("                         { \_ -> LPAREN }
