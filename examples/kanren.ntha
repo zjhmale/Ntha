@@ -94,7 +94,13 @@
         (Just (extend-subrule t1 t2 subrule))
         (if (lvar? t2)
           (Just (extend-subrule t2 t1 subrule))
-          Nothing)))))
+          ;; just work for String value to pass the type checker case lvar is String type.
+          ;; should create a new data type to support number list or more value types.
+          (if (∧ (> (len t1) 1) (> (len t2) 1))
+            (match (unify [(head t1)] [(head t2)] subrule)
+              ((Just s) → (unify (tail t1) (tail t2) s))
+              (Nothing → (Just subrule)))
+            Nothing))))))
 
 (asserteq (unify va vb empty-subrule)
           (Just [("_.a" . "_.b")]))
@@ -109,3 +115,29 @@
             (rule2 ← (unify va "1" rule1))
             (return (lookup-subrule vb rule2)))
           (Just "1"))
+
+(ƒ eqo [t1 t2]
+  (λ s → (match (unify t1 t2 s)
+           ((Just r) → (succeed r))
+           (Nothing → (fail s)))))
+
+(ƒ membero [var list]
+  (match list
+    ([] → fail)
+    (h :: t → (disj* [(eqo var h)
+                      (membero var t)]))))
+
+(ƒ conso [a b list]
+  (eqo (a :: b) list))
+
+(ƒ run [g] (g empty-subrule))
+
+(asserteq (run (membero "3" ["1" "2" "3"])) [[]])
+(asserteq (run (membero "33" ["1" "2" "3"])) [])
+(asserteq (run (membero va ["1" "2" "3"])) [[("_.a" . "1")] [("_.a" . "2")] [("_.a" . "3")]])
+(asserteq (run (conj* [(membero va ["1" "2" "3"])
+                       (membero va ["2" "3" "4"])]))
+          [[("_.a" . "2")] [("_.a" . "3")]])
+
+(asserteq (run (conso '1' "2" va)) [[("_.a" . "12")]])
+(asserteq (run (conso '1' va "12")) [[("_.a" . "2")]])

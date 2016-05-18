@@ -102,8 +102,10 @@ stringOfAdt :: Tag -> [Value] -> String
 stringOfAdt tag values = case tag of
                            "Cons" -> case (head values) of
                                       VChar _ -> "\"" ++ intercalate "" (map show (getElements (Adt tag values))) ++ "\""
-                                      _ -> "[" ++ intercalate ", " (map show (getElements (Adt tag values))) ++ "]"
-                           "Nil" -> ""
+                                      _ -> "[" ++ intercalate ", " (map (\v -> case v of
+                                                                               Adt "Nil" [] -> "[]"
+                                                                               _ -> show v) (getElements (Adt tag values))) ++ "]"
+                           "Nil" -> "[]"
                            _ -> tag ++ case values of
                                         []-> ""
                                         _ -> " " ++ intercalate " | " (map show values)
