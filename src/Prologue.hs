@@ -39,6 +39,8 @@ assumptions = do
                                            ("print", functionT [strT] unitT),
                                            ("error", functionT [strT] tvarB),
                                            ("reverse", functionT [listT tvarB] (listT tvarB)),
+                                           ("list?", functionT [tvarB] boolT),
+                                           ("string?", functionT [tvarB] boolT),
                                            ("Cons", mkTCon consConstructor listData),
                                            ("Nil", mkTCon nilConstructor listData),
                                            ("inc", functionT [intT] intT),
@@ -65,6 +67,10 @@ builtins = ValueScope Nothing $ M.fromList [("+", binFn (\(VNum a) (VNum b) -> (
                                             ("print", Fn (\v _ -> trace (desugerStrV v) VUnit)),
                                             ("error", Fn (\v _ -> error $ desugerStrV v)),
                                             ("reverse", Fn (\v _ -> reverseList v)),
+                                            ("list?", Fn (\v _ -> case v of
+                                                                   Adt "Cons" _ -> VBool True
+                                                                   _ -> VBool False)),
+                                            ("string?", Fn (\v _ -> VBool $ isString v)),
                                             ("Cons", binFn (\a b -> cons a b)),
                                             ("Nil", nil),
                                             ("inc", Fn (\(VNum n) _ -> VNum $ n + 1)),

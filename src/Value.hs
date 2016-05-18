@@ -91,10 +91,22 @@ desugerStrV v = show v
 binFn :: (Value -> Value -> Value) -> Value
 binFn f = Fn (\arg1 _ -> Fn (\arg2 _ -> f arg1 arg2))
 
+isString :: Value -> Bool
+isString v = case v of
+               Adt "Cons" [h, _] -> case h of
+                                     VChar _ -> True
+                                     _ -> False
+               _ -> False
+
 stringOfAdt :: Tag -> [Value] -> String
-stringOfAdt tag values = tag ++ case values of
-                                  [] -> ""
-                                  _ -> " " ++ intercalate " | " (map show values)
+stringOfAdt tag values = case tag of
+                           "Cons" -> case (head values) of
+                                      VChar _ -> "\"" ++ intercalate "" (map show (getElements (Adt tag values))) ++ "\""
+                                      _ -> "[" ++ intercalate ", " (map show (getElements (Adt tag values))) ++ "]"
+                           "Nil" -> ""
+                           _ -> tag ++ case values of
+                                        []-> ""
+                                        _ -> " " ++ intercalate " | " (map show values)
 
 stringOfPairs :: M.Map String Value -> String
 stringOfPairs pairs = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ " : " ++ show v) pairs) ++ "}"

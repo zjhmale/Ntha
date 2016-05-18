@@ -49,5 +49,35 @@
     (h :: t → (concat (conj h l1) t))))
 
 (asserteq (concat [1 2 3] [4 5 6]) [1 2 3 4 5 6])
+(asserteq (concat "123" "456") "123456")
+
+(ƒ flatten [l]
+  (match l
+    ([] → [])
+    (h :: t → (concat h (flatten t)))))
+
+(asserteq (flatten [[1] [2] [3]]) [1 2 3])
+
+(ƒ empty? [l]
+  (match l
+    ([] → true)
+    (_ → false)))
+
+(asserteq (empty? []) true)
+(asserteq (empty? [3]) false)
+
+(ƒ head [l]
+  (match l
+    ([] → (error "empty list"))
+    (h :: _ → h)))
+
+(asserteq (head [1 2 3]) 1)
+
+(ƒ tail [l]
+  (match l
+    ([] → [])
+    (_ :: t → t)))
+
+(asserteq (tail [1 2 3]) [2 3])
 
 (ƒ max [a b] (if (≥ a b) a b))

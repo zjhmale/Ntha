@@ -11,7 +11,8 @@ $lower = [a-z]
 $digit = [0-9]
 $letter = [$lower $upper]
 $operator = [\+\-\*\/\%\=\>\<]
-$chars = [$lower $upper $digit $operator]
+$symbol = [\?\']
+$chars = [$lower $upper $digit $operator $symbol]
 $eol = [\n]
 
 tokens :-

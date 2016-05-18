@@ -1,6 +1,30 @@
 (ƒ fail [x] [])
-(ƒ successd [x] [x])
+(ƒ succeed [x] [x])
 
 (asserteq (fail 3) [])
-(asserteq (successd 3) [3])
+(asserteq (succeed 3) [3])
 
+(ƒ disj' [f1 f2]
+  (λ x → (concat (f1 x) (f2 x))))
+
+(ƒ disj* [args]
+  (if (empty? args)
+    fail
+    (disj' (head args)
+          (disj* (tail args)))))
+
+(ƒ conj' [f1 f2]
+  (λ x → (flatten (map f2 (f1 x)))))
+
+(ƒ conj* [args]
+  (match args
+    ([] → succeed)
+    ([a] → a)
+    (h :: t → (conj' h (λ s → ((conj* t) s))))))
+
+(let f1 (λ x → (succeed (concat x "foo"))))
+(let f2 (λ x → (succeed (concat x "bar"))))
+(let f3 (λ x → (succeed (concat x "baz"))))
+
+(asserteq ((disj* [f1 f2 f3]) "a ") ["a foo" "a bar" "a baz"])
+(asserteq ((conj* [f1 f2 f3]) "a ") ["a foobarbaz"])
