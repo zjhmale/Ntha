@@ -119,7 +119,9 @@
 
 ;; monad
 
-(do Maybe
-  (a <- (Just 3))
-  (b <- (Just (+ a 3)))
-  (return (* b 3)))
+(let m (do Maybe
+         (a <- (Just 3))
+         (b <- (Just (+ a 3)))
+         (return (* b 3))))
+
+(asserteq m (Just 18))

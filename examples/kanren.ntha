@@ -28,3 +28,24 @@
 
 (asserteq ((disj* [f1 f2 f3]) "a ") ["a foo" "a bar" "a baz"])
 (asserteq ((conj* [f1 f2 f3]) "a ") ["a foobarbaz"])
+
+(asserteq ((disj* [(disj* [fail succeed])
+                   (conj* [(disj* [(λ x → (succeed (+ x 1)))
+                                   (λ x → (succeed (+ x 10)))])
+                           (disj* [succeed succeed])])])
+                  100)
+          [100 101 101 110 110])
+
+(asserteq ((disj* [(disj* [fail succeed])
+                   (disj* [(disj* [(λ x → (succeed (+ x 1)))
+                                   (λ x → (succeed (+ x 10)))])
+                           (disj* [succeed succeed])])])
+                  100)
+          [100 101 110 100 100])
+
+(asserteq ((disj* [(disj* [fail succeed])
+                   (conj* [(disj* [(λ x → (succeed (+ x 1)))
+                                   (λ x → (succeed (+ x 10)))])
+                           (disj* [succeed fail])])])
+                  100)
+          [100 101 110])
