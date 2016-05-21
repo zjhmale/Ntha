@@ -18,9 +18,10 @@ a tiny statically typed functional programming language.
 * Lambdas and curried function by default.
 * Global and Local let binding.
 * Recursive functions.
-* If-then-else control flow.
+* If-then-else / Cond control flow.
 * Type alias.
 * Do notation.
+* Begin block.
 
 ## Future Works
 
