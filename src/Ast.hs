@@ -33,9 +33,14 @@ data Expr = EVar EName
           | EProgram [Expr]
           deriving (Eq, Ord)
 
+-- for do block desuger to bind
 data Bind = Bind EName Expr
           | Return Expr
           | Single Expr
+
+-- for cond desuger to if
+data Clause = Clause Expr Expr
+            | Else Expr
 
 data TypeConstructor = TypeConstructor EName [Type]
                        deriving (Eq, Ord)

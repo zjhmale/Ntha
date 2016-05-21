@@ -13,6 +13,18 @@
     (1 ⇒ 1)
     (_ ⇒ (+ (fib (- x 1)) (fib (- x 2))))))
 
+(asserteq (fib 5) 5)
+(print (int2str (fib 5)))
+
+(ƒ fibc [x]
+  (cond
+    ((= x 0) ⇒ 0)
+    ((= x 1) ⇒ 1)
+    (else ⇒ (+ (fibc (- x 1)) (fibc (- x 2))))))
+
+(asserteq (fibc 5) 5)
+(print (int2str (fibc 5)))
+
 (ƒ fact [n]
   (if (≤ n 1)
     1
@@ -31,6 +43,16 @@
 
 (let f5 (fact-wrap 5))
 (print (int2str f5))
+
+(ƒ factc [n]
+  (cond
+    ((≤ n 1) → 1)
+    (else → (* n (factc (- n 1))))))
+
+(let fc5 (factc 5))
+
+(asserteq fc5 120)
+(print (int2str fc5))
 
 ;; record data type
 

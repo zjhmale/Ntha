@@ -25,6 +25,8 @@ tokens :-
        "begin"                     { \_ -> BEGIN }
        "type"                      { \_ -> TYPE }
        "if"                        { \_ -> IF }
+       "cond"                      { \_ -> COND }
+       "else"                      { \_ -> ELSE }
        "monad"                     { \_ -> MONAD }
        "do"                        { \_ -> DO }
        "return"                    { \_ -> RETURN }
@@ -63,6 +65,8 @@ data Token = DATA
            | DO
            | RETURN
            | IF
+           | COND
+           | ELSE
            | RARROW
            | LARROW
            | LBRACKET

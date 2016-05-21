@@ -27,6 +27,8 @@ import System.IO.Unsafe (unsafePerformIO)
     do       { DO }
     return   { RETURN }
     if       { IF }
+    cond     { COND }
+    else     { ELSE }
     rarrow   { RARROW }
     larrow   { LARROW }
     con      { CON $$ }
@@ -132,11 +134,21 @@ bind : Form                                          { Single $1 }
 binds : bind                                         { [$1] }
       | bind binds                                   { $1 : $2 }
 
+Clause : '(' else rarrow Form ')'                    { Else $4 }
+       | '(' Form rarrow Form ')'                    { Clause $2 $4 }
+
+Clauses : Clause                                     { [$1] }
+        | Clause Clauses                             { $1 : $2 }
+
 Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
      | '(' lambda Nameds rarrow FormsPlus ')'        { ELambda $3 Nothing $5 }
      | '(' lambda Nameds ':' con rarrow FormsPlus ')'{ ELambda $3 (Just (TOper $5 [])) $7 }
      | '(' let '[' bindings ']' FormsPlus ')'        { head $ foldr (\(ELetBinding pat def _) body -> [ELetBinding pat def body]) $6 $4 }
      | '(' if Form Form Form ')'                     { EIf $3 [$4] [$5] }
+     | '(' cond Clauses ')'                          { case last $3 of
+                                                         Else alt -> foldr (\(Clause cond consequent) alternative -> EIf cond [consequent] [alternative])
+                                                                           alt (init $3)
+                                                         _ -> error "last clause in cond should be an else" }
      | '(' do con binds ')'                          { unsafePerformIO $ do
                                                         monads <- readIORef monadMap
                                                         return $ case M.lookup $3 monads of
