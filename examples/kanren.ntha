@@ -88,19 +88,16 @@
 (ƒ unify [t1 t2 subrule]
   (let [t1 (lookup-subrule t1 subrule)
         t2 (lookup-subrule t2 subrule)]
-    (if (= t1 t2)
-      (Just s)
-      (if (lvar? t1)
-        (Just (extend-subrule t1 t2 subrule))
-        (if (lvar? t2)
-          (Just (extend-subrule t2 t1 subrule))
-          ;; just work for String value to pass the type checker case lvar is String type.
-          ;; should create a new data type to support number list or more value types.
-          (if (∧ (> (len t1) 1) (> (len t2) 1))
-            (match (unify [(head t1)] [(head t2)] subrule)
-              ((Just s) → (unify (tail t1) (tail t2) s))
-              (Nothing → (Just subrule)))
-            Nothing))))))
+    (cond
+      ((= t1 t2) → (Just s))
+      ((lvar? t1) → (Just (extend-subrule t1 t2 subrule)))
+      ((lvar? t2) → (Just (extend-subrule t2 t1 subrule)))
+      ;; just work for String value to pass the type checker case lvar is String type.
+      ;; should create a new data type to support number list or more value types.
+      ((∧ (> (len t1) 1) (> (len t2) 1)) → (match (unify [(head t1)] [(head t2)] subrule)
+                                             ((Just s) → (unify (tail t1) (tail t2) s))
+                                             (Nothing → (Just subrule))))
+      (else → Nothing))))
 
 (asserteq (unify va vb empty-subrule)
           (Just [("_.a" . "_.b")]))
