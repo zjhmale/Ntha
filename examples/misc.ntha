@@ -125,3 +125,8 @@
          (return (* b 3))))
 
 (asserteq m (Just 18))
+
+(begin
+  (let name "ntha")
+  (print name)
+  (print "language"))

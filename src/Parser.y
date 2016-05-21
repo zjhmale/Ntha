@@ -19,6 +19,7 @@ import System.IO.Unsafe (unsafePerformIO)
 %token
     data     { DATA }
     match    { MATCH }
+    begin    { BEGIN }
     type     { TYPE }
     defun    { DEFUN }
     lambda   { LAMBDA }
@@ -80,6 +81,7 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
      | '(' monad con Form ')'                        { unsafePerformIO $ do
                                                         $4 `seq` modifyIORef monadMap $ M.insert $3 $4
                                                         return $ EDestructLetBinding (IdPattern $3) [] [$4] }
+     | '(' begin Exprs ')'                           { EProgram $3 }
      | Form                                          { $1 }
 
 -- TODO should support arg parameter such as (Maybe Number)

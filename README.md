@@ -119,13 +119,17 @@ a tiny statically typed functional programming language.
                                    v2 (eval env e2)]
                                (eval-op op v1 v2)))))
 
-(match (eval [] (LetRec "fact" (Lambda "n" (If (Binop Less ((Var "n") . (Num 2)))
-                                               (Num 1)
-                                               (Binop Mul ((Var "n") . (App (Var "fact")
-                                                                            (Binop Sub ((Var "n") . (Num 1))))))))
-                               (App (Var "fact") (Num 5))))
-  ((Just (Num num)) ⇒ (print (int2str num)))
-  (Nothing ⇒ (error "oops")))
+(begin
+  (print "start")
+  (let result (match (eval [] (LetRec "fact" (Lambda "n" (If (Binop Less ((Var "n") . (Num 2)))
+                                                             (Num 1)
+                                                             (Binop Mul ((Var "n") . (App (Var "fact")
+                                                                                          (Binop Sub ((Var "n") . (Num 1))))))))
+                                             (App (Var "fact") (Num 5))))
+                ((Just (Num num)) ⇒ (print (int2str num)))
+                (Nothing ⇒ (error "oops"))))
+  (print result)
+  (print "finish"))
 ```
 
 ## License
