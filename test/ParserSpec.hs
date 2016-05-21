@@ -134,6 +134,9 @@ spec = do
       parseExpr "(let l (1 :: 2 :: 3 :: Nil))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "l") [] [EApp (EApp (EVar "Cons") $ ENum 1) $ EApp (EApp (EVar "Cons") $ ENum 2) $ EApp (EApp (EVar "Cons") $ ENum 3) $ EVar "Nil"]]
       parseExpr "(let profile {:name \"ntha\" :age 12})" `shouldBe` EProgram [EDestructLetBinding (IdPattern "profile") [] [ERecord (M.fromList [("name", EStr "ntha"), ("age", ENum 12)])]]
       parseExpr "(:name profile)" `shouldBe` EProgram [EAccessor (EVar "profile") "name"]
+    it "should parse cond expression" $ do
+      parseExpr "(ƒ fact [n] (cond ((≤ n 1) → 1) (else → (* n (fact (- n 1))))))" `shouldBe` parseExpr "(ƒ fact [n] (if (≤ n 1) 1 (* n (fact (- n 1)))))"
+      parseExpr "(ƒ fib [x] (cond ((= x 0) ⇒ 0) ((= x 1) ⇒ 1) (else ⇒ (+ (fib (- x 1)) (fib (- x 2))))))" `shouldBe` parseExpr "(ƒ fib [x] (if (= x 0) 0 (if (= x 1) 1 (+ (fib (- x 1)) (fib (- x 2))))))"
     it "should parse destructuring" $ do
       parseExpr "(let (a . b) (3 . \"d\"))" `shouldBe` EProgram [EDestructLetBinding (TuplePattern [IdPattern "a", IdPattern "b"]) [] [ETuple [ENum 3, EStr "d"]]]
       parseExpr "(let d ((3 . true) . (\"test\" . 'c' . a)))" `shouldBe` EProgram [EDestructLetBinding (IdPattern "d") [] [ETuple [ETuple [ENum 3, EBool True], ETuple [EStr "test", EChar 'c', EVar "a"]]]]
