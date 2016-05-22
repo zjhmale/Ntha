@@ -251,5 +251,4 @@ analyze term scope nonGeneric = case term of
                                                      return rt)
                                                    resT cases
                                     return (scope, resT')
-                                  EProgram instructions -> do
-                                    foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions
+                                  EProgram instructions -> foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions

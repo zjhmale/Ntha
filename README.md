@@ -93,10 +93,11 @@ a tiny statically typed functional programming language.
     ((Var x) ⇒ (do Maybe
                  (val ← (lookup x env))
                  (return val)))
-    ((If cond then else) → (match (eval env cond)
-                             ((Just (Bool true)) → (eval env then))
-                             ((Just (Bool false)) → (eval env else))
-                             (_ → (error "condition should be evaluated to a boolean value"))))
+    ((If condition consequent alternative) →
+          (match (eval env condition)
+            ((Just (Bool true)) → (eval env consequent))
+            ((Just (Bool false)) → (eval env alternative))
+            (_ → (error "condition should be evaluated to a boolean value"))))
     ((Lambda _ _) → (Just (Closure expr env)))
     ((App fn arg) → (let [fnv (eval env fn)
                           argv (eval env arg)]
