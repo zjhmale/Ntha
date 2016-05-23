@@ -152,3 +152,7 @@
   (let name "ntha")
   (print name)
   (print "language"))
+
+;; negative number
+
+(asserteq (+ -1 2) 1)

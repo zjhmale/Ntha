@@ -53,6 +53,7 @@ tokens :-
        '[^'\"]{1}'                 { \s -> CHAR ((head . tail . init) s) }
        $operator | "≠" | "≤" | "≥" { \s -> OPERATOR s }
        $digit+                     { \s -> NUMBER (read s) }
+       "-" $digit+                 { \s -> NUMBER (read s) }
 
 {
 data Token = DATA
