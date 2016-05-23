@@ -11,7 +11,7 @@
   (if (empty? args)
     fail
     (disj' (head args)
-          (disj* (tail args)))))
+           (disj* (tail args)))))
 
 (ƒ conj' [f1 f2]
   (λ x → (flatten (map f2 (f1 x)))))

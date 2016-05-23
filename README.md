@@ -25,14 +25,15 @@ a tiny statically typed functional programming language.
 
 ## Future Works
 
-* Module system.
+* Atoms (need to handle mutable state in evaluation procedure, reference to the [implementation of Clea Programming Language](https://github.com/zjhmale/Clea/blob/master/src/Prologue.hs#L191-211)).
+* Module system (also need to get a monadic evaluation procedure to read file content).
 * error propagation (try / catch).
 * Lazyness.
 * JIT backend.
 * Type-classes.
 * Rank-N types.
 * Dependent types.
-* Fully type checked lisp like macros.
+* Fully type checked lisp like macros (need to make the syntax more isomorphic).
 * TCO.
 
 ## Screenshot
@@ -136,4 +137,6 @@ a tiny statically typed functional programming language.
 
 ## License
 
-[![license BSD](https://img.shields.io/badge/license-BSD-orange.svg)](https://en.wikipedia.org/wiki/BSD_licenses)
+Copyright © 2016 zjhmale
+
+Distributed under the [![license BSD](https://img.shields.io/badge/license-BSD-orange.svg)](https://en.wikipedia.org/wiki/BSD_licenses)
