@@ -21,4 +21,21 @@
   (match t
     ((TVar b) → (lookup! t b s))
     ((t1 :~> t2) → ((apply s t1) :~> (apply s t2)))
-    ((TPoly bs t') → (TPoly bs (apply (diff-map s bs) t')))))
+    ((TPoly bs t') → (TPoly bs (apply (diff-map s bs) t')))
+    (_ → t)))
+
+(ƒ compose
+  [s2 s1]
+  (union-map (map-map (λ t → (apply s2 t)) s1) s2))
+
+(ƒ free-vars
+  [t]
+  (match t
+    ((TVar b) → [b])
+    ((t1 :~> t2) → (nub (concat (free-vars t1) (free-vars t2))))
+    ((TPoly bs t') → (diff-list (free-vars t') bs))
+    (_ → [])))
+
+(ƒ occurs-in
+  [b t]
+  (exists? b (free-vars t)))
