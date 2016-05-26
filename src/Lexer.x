@@ -9,7 +9,7 @@ import Data.Char (toUpper)
 $upper = [A-Z]
 $lower = [a-z]
 $digit = [0-9]
-$operator = [\+\-\*\/\%\=\>\<\∧\∨\¬\?\']
+$operator = [\+\-\*\/\%\=\>\<\∧\∨\¬\?\'\~\!]
 $chars = [$lower $upper $digit $operator]
 $eol = [\n]
 

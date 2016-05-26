@@ -1,0 +1,24 @@
+(type Binder Number)
+
+(data Expr
+  (EVar Binder)
+  (ELam Binder Expr)
+  (EApp Expr Expr)
+  (ELet Binder Expr Expr))
+
+(type Prim String)
+
+(data Type
+  (TPrim Prim)
+  (TVar Binder)
+  (Type :~> Type)
+  (TPoly [Binder] Type))
+
+(type Subrule [(Binder . Type)])
+
+(ƒ apply
+  [s t]
+  (match t
+    ((TVar b) → (lookup! t b s))
+    ((t1 :~> t2) → ((apply s t1) :~> (apply s t2)))
+    ((TPoly bs t') → (TPoly bs (apply (diff-map s bs) t')))))

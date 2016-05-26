@@ -111,6 +111,7 @@ VConArgs : VConArg                                   { [$1] }
 
 VConstructor : con                                   { EVConstructor $1 [] }
              | '(' con VConArgs ')'                  { EVConstructor $2 $3 }
+             | '(' VConArg keyword VConArg ')'       { EVConstructor $3 [$2, $4] }
 
 VConstructors : VConstructor                         { [$1] }
               | VConstructor VConstructors           { $1 : $2 }
@@ -173,6 +174,7 @@ Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
      | '(' ListForms ')'                             { $2 }
      | '(' TupleFroms ')'                            { ETuple $2 }
      | '(' Form FormsPlus ')'                        { foldl (\oper param -> (EApp oper param)) $2 $3 }
+     | '(' Form keyword Form ')'                     { foldl (\oper param -> (EApp oper param)) (EVar $3) [$2, $4] }
      | '(' OPERATOR FormsPlus ')'                    { case $3 of
                                                          a:[] -> EApp (EVar $2) a
                                                          a:b:[] -> EApp (EApp (EVar $2) a) b
@@ -205,6 +207,7 @@ Pattern : '_'                                        { WildcardPattern }
         | string                                     { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) (map CharPattern $1) }
         | con                                        { TConPattern $1 [] }
         | '(' con Args ')'                           { TConPattern $2 $3 }
+        | '(' Pattern keyword Pattern ')'            { TConPattern $3 [$2, $4] }
         | '(' TuplePatterns ')'                      { TuplePattern $2 }
         | '[' ']'                                    { TConPattern "Nil" [] }
         | '[' Patterns ']'                           { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) $2 }
