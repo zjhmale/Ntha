@@ -36,6 +36,18 @@
     ((TPoly bs t') → (diff-list (free-vars t') bs))
     (_ → [])))
 
-(ƒ occurs-in
+(ƒ occurs-in?
   [b t]
   (exists? b (free-vars t)))
+
+(ƒ unify
+  [t1 t2]
+  (match (t1 . t2)
+    (((TPrim _) . (TPrim _)) → [])
+    (((TVar b) . t) → (if (occurs-in? b t)
+                        (error "infinite type found!")
+                        [(b . t)]))
+    ((t . (TVar b)) → (unify t2 t1))
+    (((t1 :~> t2) . (t1' :~> t2')) → (compose (unify t1 t1')
+                                              (unify t2 t2')))
+    ((_ . _) → (error "unification failed!"))))
