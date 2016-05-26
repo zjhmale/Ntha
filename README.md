@@ -26,6 +26,7 @@ a tiny statically typed functional programming language.
 ## Future Works
 
 * Atoms (need to handle mutable state in evaluation procedure, reference to the [implementation of Clea Programming Language](https://github.com/zjhmale/Clea/blob/master/src/Prologue.hs#L191-211)).
+* Haskell like type annotations for type checking.
 * Module system (also need to get a monadic evaluation procedure to read file content).
 * error propagation (try / catch).
 * Lazyness.

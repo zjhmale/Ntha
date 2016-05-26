@@ -9,10 +9,8 @@ import Data.Char (toUpper)
 $upper = [A-Z]
 $lower = [a-z]
 $digit = [0-9]
-$letter = [$lower $upper]
-$operator = [\+\-\*\/\%\=\>\<\∧\∨\¬]
-$symbol = [\?\']
-$chars = [$lower $upper $digit $operator $symbol]
+$operator = [\+\-\*\/\%\=\>\<\∧\∨\¬\?\']
+$chars = [$lower $upper $digit $operator]
 $eol = [\n]
 
 tokens :-
