@@ -1,7 +1,8 @@
 (type Prim String)
 (type Binder Number)
+(type Name String)
 (type Fresh Binder)
-(type Context [(Binder . Type)])
+(type Context [(Name . Type)])
 (type Subrule [(Binder . Type)])
 
 (data Expr
@@ -64,6 +65,10 @@
 (let tvarA 0)
 (let tvarB 1)
 (let tvarC 2)
+(let tvarD 3)
+(let tvarE 4)
+(let tvarF 5)
+(let tvarG 6)
 
 (let mono1 ((TVar tvarA) :~> intT))
 (let mono2 ((TVar tvarB) :~> (TVar tvarB)))
@@ -118,6 +123,67 @@
                                     (((s2 . t2) . fresh2) → (((compose s2 s1) . t2) . fresh2)))))))))
 
 (ƒ w
-  [expr]
-  (match (w' 0 [] expr)
+  [assumps expr]
+  (match (w' 0 assumps expr)
     (((_ . t) . _) → (generalize [] t))))
+
+(let assumptions [(0 . intT) ;;
+                  (1 . intT) ;; one
+                  (2 . boolT) ;; true
+                  (3 . boolT) ;; false
+                  (4 . (boolT :~> boolT)) ;; not
+                  (5 . (intT :~> (intT :~> intT))) ;; add
+                  (6 . (TPoly [tvarA] ((TVar tvarA) :~> (TVar tvarA)))) ;; id
+                  (7 . (TPoly [tvarA] ((TVar tvarA) :~> ((TVar tvarA) :~> boolT)))) ;; eq
+                  (8 . (TPoly [tvarA tvarB tvarC] (((TVar tvarB) :~> (TVar tvarC)) :~> (((TVar tvarA) :~> (TVar tvarB)) :~> ((TVar tvarA) :~> (TVar tvarC)))))) ;; compose
+                  (9 . (TPoly [tvarA] ((TVar tvarA) :~> ((TVar tvarA) :~> (TVar tvarA))))) ;; choose
+                 ])
+
+(ƒ infer
+  [expr]
+  (w assumptions expr))
+
+(asserteq (infer (EVar 6)) (TPoly [tvarA] ((TVar tvarA) :~> (TVar tvarA))))
+(asserteq (infer (EApp (EVar 6) (EApp (EVar 6) (EVar 1)))) (TPoly [] intT))
+(asserteq (infer (EApp (EApp (EVar 7) (EVar 3)) (EVar 2))) (TPoly [] boolT))
+(asserteq (infer (EApp (EVar 8) (EVar 4))) (TPoly [tvarB] (((TVar tvarB) :~> boolT) :~> ((TVar tvarB) :~> boolT))))
+(asserteq (infer (EApp (EApp (EVar 8) (EVar 4)) (EApp (EVar 7) (EVar 1)))) (TPoly [] (intT :~> boolT)))
+(asserteq (infer (EApp (EVar 8) (EApp (EVar 5) (EVar 1)))) (TPoly [tvarB] (((TVar tvarB) :~> intT) :~> ((TVar tvarB) :~> intT))))
+(asserteq (infer (EApp (EApp (EApp (EVar 8) (EVar 7)) (EVar 5)) (EVar 1))) (TPoly [] ((intT :~> intT) :~> boolT)))
+
+(let evarX 100)
+(let evarY 200)
+(let evarA 300)
+(let evarB 400)
+(let evarC 500)
+
+(asserteq (infer (ELam evarA
+                       (ELam evarB
+                       (ELet evarA
+                             (EApp (EVar evarA)
+                                   (EVar evarB))
+                             (ELam evarA
+                                   (EApp (EVar evarB)
+                                         (EVar evarA)))))))
+          (TPoly [tvarC tvarD tvarE] ((((TVar tvarD) :~> (TVar tvarE)) :~> (TVar tvarC)) :~> (((TVar tvarD) :~> (TVar tvarE)) :~> ((TVar tvarD) :~> (TVar tvarE))))))
+
+(asserteq (infer (ELam evarA
+                       (ELet evarX
+                           (ELam evarB
+                                 (ELet evarY
+                                       (ELam evarC (EApp (EVar evarA) (EVar 0)))
+                                       (EApp (EVar evarY) (EVar 1))))
+                           (EApp (EVar evarX) (EVar 1)))))
+          (TPoly [tvarF] ((intT :~> (TVar tvarF)) :~> (TVar tvarF))))
+
+(asserteq (infer (EApp (EApp (EVar 9)
+                       (ELam evarA
+                             (ELam evarB
+                                   (EVar evarA))))
+                 (ELam evarA
+                       (ELam evarB
+                             (EVar evarB)))))
+          (TPoly [tvarG] ((TVar tvarG) :~> ((TVar tvarG) :~> (TVar tvarG)))))
+
+(asserteq (infer (EApp (EVar 8) (EVar 8)))
+          (TPoly [tvarB tvarF tvarE tvarG] (((TVar tvarB) :~> ((TVar tvarF) :~> (TVar tvarG))) :~> ((TVar tvarB) :~> (((TVar tvarE) :~> (TVar tvarF)) :~> ((TVar tvarE) :~> (TVar tvarG)))))))

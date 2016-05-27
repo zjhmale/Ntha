@@ -150,6 +150,7 @@ Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
                                                          Else alt -> foldr (\(Clause cond consequent) alternative -> EIf cond [consequent] [alternative])
                                                                            alt (init $3)
                                                          _ -> error "last clause in cond should be an else" }
+     -- do block desuger to nested >>= and return, inspired by http://www.haskellforall.com/2014/10/how-to-desugar-haskell-code.html
      | '(' do con binds ')'                          { unsafePerformIO $ do
                                                         monads <- readIORef monadMap
                                                         return $ case M.lookup $3 monads of
