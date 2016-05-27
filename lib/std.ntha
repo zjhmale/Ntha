@@ -45,7 +45,7 @@
     ([] ⇒ default)
     ((k . v) :: t ⇒ (if (= name k)
                       v
-                      (lookup! name t)))))
+                      (lookup! default name t)))))
 
 (ƒ exists?
   [e l]

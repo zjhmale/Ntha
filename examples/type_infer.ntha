@@ -16,17 +16,20 @@
   (Type :~> Type)
   (TPoly [Binder] Type))
 
-(ƒ apply
+(let intT (TPrim "int"))
+(let boolT (TPrim "bool"))
+
+(ƒ subst
   [s t]
   (match t
     ((TVar b) → (lookup! t b s))
-    ((t1 :~> t2) → ((apply s t1) :~> (apply s t2)))
-    ((TPoly bs t') → (TPoly bs (apply (diff-map s bs) t')))
+    ((t1 :~> t2) → ((subst s t1) :~> (subst s t2)))
+    ((TPoly bs t') → (TPoly bs (subst (diff-map s bs) t')))
     (_ → t)))
 
 (ƒ compose
   [s2 s1]
-  (union-map (map-map (λ t → (apply s2 t)) s1) s2))
+  (union-map (map-map (subst s2) s1) s2))
 
 (ƒ free-vars
   [t]
@@ -48,9 +51,23 @@
                         (error "infinite type found!")
                         [(b . t)]))
     ((t . (TVar b)) → (unify t2 t1))
-    (((t1 :~> t2) . (t1' :~> t2')) → (compose (unify t1 t1')
-                                              (unify t2 t2')))
+    (((t1 :~> t2) . (t1' :~> t2')) → (let [s1 (unify t1 t1')
+                                           s2 (unify (subst s1 t2)
+                                                     (subst s1 t2'))]
+                                       (compose s2 s1)))
     ((_ . _) → (error "unification failed!"))))
+
+(let tvarA 0)
+(let tvarB 1)
+(let tvarC 2)
+
+(let mono1 ((TVar tvarA) :~> intT))
+(let mono2 ((TVar tvarB) :~> (TVar tvarB)))
+(let mono3 ((TVar tvarA) :~> (TVar tvarB)))
+(let mono4 (((TVar tvarB) :~> (TVar tvarC)) :~> (TVar tvarC)))
+
+(asserteq (unify mono1 mono2) [(tvarB . (TPrim "int")) (tvarA . (TPrim "int"))])
+(asserteq (unify mono3 mono4) [(tvarB . (TVar tvarC)) (tvarA . ((TVar tvarC) :~> (TVar tvarC)))])
 
 (ƒ make-fresh
   [fresh bs]
@@ -63,7 +80,7 @@
   [fresh t]
   (match t
     ((TPoly bs t') → (let [(subrule . fresh') (make-fresh fresh bs)]
-                       ((apply subrule t') . fresh')))
+                       ((subst subrule t') . fresh')))
     (_ → (t . fresh))))
 
 (ƒ generalize
