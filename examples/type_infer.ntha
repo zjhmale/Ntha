@@ -1,4 +1,8 @@
+(type Prim String)
 (type Binder Number)
+(type Fresh Binder)
+(type Context [(Binder . Type)])
+(type Subrule [(Binder . Type)])
 
 (data Expr
   (EVar Binder)
@@ -6,15 +10,11 @@
   (EApp Expr Expr)
   (ELet Binder Expr Expr))
 
-(type Prim String)
-
 (data Type
   (TPrim Prim)
   (TVar Binder)
   (Type :~> Type)
   (TPoly [Binder] Type))
-
-(type Subrule [(Binder . Type)])
 
 (ƒ apply
   [s t]
@@ -51,3 +51,22 @@
     (((t1 :~> t2) . (t1' :~> t2')) → (compose (unify t1 t1')
                                               (unify t2 t2')))
     ((_ . _) → (error "unification failed!"))))
+
+(ƒ make-fresh
+  [fresh bs]
+  (match bs
+    ([] → ([] . fresh))
+    (h :: t → (match (make-fresh (inc fresh) t)
+                ((s . fresh') → (((h . (TVar fresh)) :: s) . fresh'))))))
+
+(ƒ instantiate
+  [fresh t]
+  (match t
+    ((TPoly bs t') → (let [(subrule . fresh') (make-fresh fresh bs)]
+                       ((apply subrule t') . fresh')))
+    (_ → (t . fresh))))
+
+(ƒ generalize
+  [ctx t]
+  (let [frees (nub (diff-list (free-vars t) (map fst ctx)))]
+    (TPoly frees t)))
