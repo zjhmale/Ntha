@@ -27,6 +27,10 @@
     ((TPoly bs t') → (TPoly bs (subst (diff-map s bs) t')))
     (_ → t)))
 
+(ƒ subst-ctx
+  [s ctx]
+  (map-map (subst s) ctx))
+
 (ƒ compose
   [s2 s1]
   (union-map (map-map (subst s2) s1) s2))
@@ -87,3 +91,33 @@
   [ctx t]
   (let [frees (nub (diff-list (free-vars t) (map fst ctx)))]
     (TPoly frees t)))
+
+(ƒ w'
+  [fresh ctx expr]
+  (match expr
+    ((EVar b) → (match (lookup b ctx)
+                  (Nothing → (error "ubound variable"))
+                  ((Just t) → (let [(t' . fresh') (instantiate fresh t)]
+                                (([] . t') . fresh')))))
+    ((EApp fn arg) → (match (w' (inc fresh) ctx fn)
+                       (((s1 . t1) . fresh1) →
+                         (match (w' fresh1 (subst-ctx s1 ctx) arg)
+                           (((s2 . t2) . fresh2) →
+                             (let [b (TVar fresh)
+                                   s3 (unify (subst s2 t1) (t2 :~> b))]
+                               (((compose s3 (compose s2 s1)) . (subst s3 b)) . fresh2)))))))
+    ((ELam name body) → (let [b (TVar fresh)]
+                          (match (w' (inc fresh) (union-map [(name . b)] ctx) body)
+                            (((s . t) . fresh') → ((s . ((subst s b) :~> t)) . fresh')))))
+    ((ELet name def body) → (match (w' fresh ctx def)
+                              (((s1 . t1) . fresh1) →
+                                (let [ctx' (subst-ctx s1 ctx)
+                                      g (generalize ctx' t1)
+                                      ctx'' (union-map [(name . g)] ctx')]
+                                  (match (w' fresh1 ctx'' body)
+                                    (((s2 . t2) . fresh2) → (((compose s2 s1) . t2) . fresh2)))))))))
+
+(ƒ w
+  [expr]
+  (match (w' 0 [] expr)
+    (((_ . t) . _) → (generalize [] t))))
