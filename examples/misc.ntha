@@ -156,3 +156,16 @@
 ;; negative number
 
 (asserteq (+ -1 2) 1)
+
+;; letrec https://github.com/zjhmale/Ntha/issues/1
+
+(let [ev? (λ n →
+            (match (λ n → (if (zero? n) false (ev? (dec n))))
+              (od? → (if (zero? n) true (od? (dec n))))))
+      od? (λ n →
+            (match (λ n → (if (zero? n) true (od? (dec n))))
+              (ev? → (if (zero? n) false (ev? (dec n))))))]
+  (begin (print (bool2str (ev? 11)))
+         (print (bool2str (ev? 12)))
+         (print (bool2str (od? 11)))
+         (print (bool2str (od? 12)))))

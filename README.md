@@ -101,8 +101,7 @@ a tiny statically typed functional programming language.
             ((Just (Bool false)) → (eval env alternative))
             (_ → (error "condition should be evaluated to a boolean value"))))
     ((Lambda _ _) → (Just (Closure expr env)))
-    ((App fn arg) → (let [fnv (eval env fn)
-                          argv (eval env arg)]
+    ((App fn arg) → (let [fnv (eval env fn)]
                       (match fnv
                         ((Just (Closure (Lambda x e) innerenv)) →
                             (do Maybe

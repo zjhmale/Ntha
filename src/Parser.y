@@ -83,7 +83,6 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
      | '(' monad con Form ')'                        { unsafePerformIO $ do
                                                         $4 `seq` modifyIORef monadMap $ M.insert $3 $4
                                                         return $ EDestructLetBinding (IdPattern $3) [] [$4] }
-     | '(' begin Exprs ')'                           { EProgram $3 }
      | Form                                          { $1 }
 
 -- TODO should support arg parameter such as (Maybe Number)
@@ -183,6 +182,7 @@ Form : '(' match Form Cases ')'                      { EPatternMatching $3 $4 }
      | '[' FormsStar ']'                             { EList $2 }
      | '{' RecordForms '}'                           { ERecord $2 }
      | '(' keyword Form ')'                          { EAccessor $3 $2 }
+     | '(' begin Exprs ')'                           { EProgram $3 }
      | Atom                                          { $1 }
 
 RecordForms : keyword Form                           { M.singleton $1 $2 }
