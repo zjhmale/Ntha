@@ -137,6 +137,7 @@
                   (7 . (TPoly [tvarA] ((TVar tvarA) :~> ((TVar tvarA) :~> boolT)))) ;; eq
                   (8 . (TPoly [tvarA tvarB tvarC] (((TVar tvarB) :~> (TVar tvarC)) :~> (((TVar tvarA) :~> (TVar tvarB)) :~> ((TVar tvarA) :~> (TVar tvarC)))))) ;; compose
                   (9 . (TPoly [tvarA] ((TVar tvarA) :~> ((TVar tvarA) :~> (TVar tvarA))))) ;; choose
+                  (10 . (TPoly [tvarA tvarB tvarC] (((TVar tvarA) :~> ((TVar tvarB) :~> (TVar tvarC))) :~> ((TVar tvarB) :~> ((TVar tvarA) :~> (TVar tvarC)))))) ;; flip
                  ])
 
 (ƒ infer
@@ -187,3 +188,6 @@
 
 (asserteq (infer (EApp (EVar 8) (EVar 8)))
           (TPoly [tvarB tvarF tvarE tvarG] (((TVar tvarB) :~> ((TVar tvarF) :~> (TVar tvarG))) :~> ((TVar tvarB) :~> (((TVar tvarE) :~> (TVar tvarF)) :~> ((TVar tvarE) :~> (TVar tvarG)))))))
+
+;; flip id
+(asserteq (infer (EApp (EVar 10) (EVar 6))) (TPoly [tvarC tvarD] ((TVar tvarC) :~> (((TVar tvarC) :~> (TVar tvarD)) :~> (TVar tvarD)))))
