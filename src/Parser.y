@@ -43,6 +43,11 @@ import System.IO.Unsafe (unsafePerformIO)
     ':'      { COLON }
     '::'     { DOUBLECOLON }
     let      { LET }
+    TNumber  { NUMBERT }
+    TBool    { BOOLT }
+    TChar    { CHART }
+    TString  { STRT }
+    product  { PRODUCT }
     keyword  { KEYWORD $$ }
     VAR      { VAR $$ }
     OPERATOR { OPERATOR $$ }
@@ -83,6 +88,7 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
      | '(' monad con Form ')'                        { unsafePerformIO $ do
                                                         $4 `seq` modifyIORef monadMap $ M.insert $3 $4
                                                         return $ EDestructLetBinding (IdPattern $3) [] [$4] }
+     | '(' VAR ':' Type ')'                          { ETypeAnno $2 $4 }
      | Form                                          { $1 }
 
 -- TODO should support arg parameter such as (Maybe Number)
@@ -103,7 +109,7 @@ VConArg : VAR                                        { EVCAVar $1 }
         | '(' TupleVConArgs ')'                      { EVCATuple $2 }
 
 TupleVConArgs : VConArg '.' VConArg                  { [$1, $3] }
-              | VConArgs '.' VConArg                 { $1 ++ [$3] }
+              | TupleVConArgs '.' VConArg            { $1 ++ [$3] }
 
 VConArgs : VConArg                                   { [$1] }
          | VConArg VConArgs                          { $1 : $2 }
@@ -239,6 +245,25 @@ Atom : boolean                                       { EBool $1 }
      | VAR                                           { EVar $1 }
      | OPERATOR                                      { EVar $1 }
      | con                                           { EVar $1 }
+
+-- parsing type
+
+Type : AtomType                             { $1 }
+     | AtomType rarrow Type                 { arrowT $1 $3 }
+
+AtomType : TNumber                          { intT }
+         | TBool                            { boolT }
+         | TChar                            { charT }
+         | TString                          { strT }
+         | '[' Type ']'                     { listT $2 }
+         | '(' TupleTypes ')'               { productT $2 }
+         | '(' Type ')'                     { $2 }
+
+Types : Type                                { [$1] }
+      | Type Types                          { $1 : $2 }
+
+TupleTypes : Type product Type              { [$1, $3] }
+           | TupleTypes product Type        { $1 ++ [$3] }
 
 {
 aliasMap :: IORef (M.Map String EVConArg)

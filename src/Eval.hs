@@ -224,5 +224,6 @@ eval expr scope = case expr of
                                                                    in if fnV == VUnit
                                                                       then insert name (Adt name []) env
                                                                       else insert name fnV env
+                    ETypeAnno _ _ -> (scope, VUnit)
                     EProgram instrs -> foldl (\(env, val) instr -> val `seq` eval instr env)
                                             (child scope, VUnit) instrs

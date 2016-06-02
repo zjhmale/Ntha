@@ -30,6 +30,7 @@ data Expr = EVar EName
           | ELetBinding Pattern Expr [Expr]
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
+          | ETypeAnno EName Type -- explicit type annotation
           | EProgram [Expr]
           deriving (Eq, Ord)
 
@@ -145,6 +146,7 @@ reprOfExpr i e = case e of
                                                                                                                                                                                             _ -> " " ++ unwords (map show types)) tcons)
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
                   ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
+                  ETypeAnno name t -> tab i ++ "(" ++ name ++ " : " ++ show t ++ ")"
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
 
 instance Show Expr where

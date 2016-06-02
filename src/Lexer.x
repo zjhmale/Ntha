@@ -44,6 +44,11 @@ tokens :-
        ":"                         { \_ -> COLON }
        "∷" | "::"                  { \_ -> DOUBLECOLON }
        "let"                       { \_ -> LET }
+       "Z"                         { \_ -> NUMBERT }
+       "B"                         { \_ -> BOOLT }
+       "C"                         { \_ -> CHART }
+       "S"                         { \_ -> STRT }
+       "×"                         { \_ -> PRODUCT }
        "true" | "false"            { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $upper $chars*              { \s -> CON s }
        $lower $chars*              { \s -> VAR s }
@@ -81,6 +86,11 @@ data Token = DATA
            | VAR EName
            | CON EName -- constructor names or uppercase symbols
            | LET
+           | NUMBERT
+           | BOOLT
+           | CHART
+           | STRT
+           | PRODUCT
            | KEYWORD String
            | OPERATOR String
            | BOOLEAN Bool

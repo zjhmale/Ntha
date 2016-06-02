@@ -251,4 +251,5 @@ analyze term scope nonGeneric = case term of
                                                      return rt)
                                                    resT cases
                                     return (scope, resT')
+                                  ETypeAnno _ _ -> undefined
                                   EProgram instructions -> foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions
