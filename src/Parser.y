@@ -216,6 +216,7 @@ Pattern : '_'                                        { WildcardPattern }
         | string                                     { foldr (\p t -> TConPattern "Cons" [p, t]) (TConPattern "Nil" []) (map CharPattern $1) }
         | con                                        { TConPattern $1 [] }
         | '(' con Args ')'                           { TConPattern $2 $3 }
+        -- e.g. (t1 :~> t2)
         | '(' Pattern keyword Pattern ')'            { TConPattern $3 [$2, $4] }
         | '(' TuplePatterns ')'                      { TuplePattern $2 }
         | '[' ']'                                    { TConPattern "Nil" [] }
@@ -250,24 +251,25 @@ Atom : boolean                                       { EBool $1 }
 
 -- parsing type
 
-Type : AtomType                             { $1 }
-     | AtomType rarrow Type                 { arrowT $1 $3 }
+Type : AtomType                                      { $1 }
+     | AtomType rarrow Type                          { arrowT $1 $3 }
 
-AtomType : TVAR                             { fromJust $ M.lookup $1 tvarMap }
-         | TNumber                          { intT }
-         | TBool                            { boolT }
-         | TChar                            { charT }
-         | TString                          { strT }
-         | con Types                        { TOper $1 $2 }
-         | '[' Type ']'                     { listT $2 }
-         | '(' TupleTypes ')'               { productT $2 }
-         | '(' Type ')'                     { $2 }
+-- TODO support type alias in type signature
+AtomType : TVAR                                      { fromJust $ M.lookup $1 tvarMap }
+         | TNumber                                   { intT }
+         | TBool                                     { boolT }
+         | TChar                                     { charT }
+         | TString                                   { strT }
+         | con Types                                 { TOper $1 $2 }
+         | '[' Type ']'                              { listT $2 }
+         | '(' TupleTypes ')'                        { productT $2 }
+         | '(' Type ')'                              { $2 }
 
-Types : {- empty -}                         { [] }
-      | Type Types                          { $1 : $2 }
+Types : {- empty -}                                  { [] }
+      | Type Types                                   { $1 : $2 }
 
-TupleTypes : Type product Type              { [$1, $3] }
-           | TupleTypes product Type        { $1 ++ [$3] }
+TupleTypes : Type product Type                       { [$1, $3] }
+           | TupleTypes product Type                 { $1 ++ [$3] }
 
 {
 aliasMap :: IORef (M.Map String EVConArg)

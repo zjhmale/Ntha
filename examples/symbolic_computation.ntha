@@ -101,7 +101,7 @@
           (Iff ⇒ (logic-eval (:iff op-map) (v1 . v2)))))
       (_ ⇒ Nothing))))
 
-(eval : [([Char] × Expr)] → (Expr → (Maybe Expr)))
+(eval : [([C] × Expr)] → (Expr → (Maybe Expr)))
 (ƒ eval [env expr]
   (match expr
     ((Num _) ⇒ (Just expr))

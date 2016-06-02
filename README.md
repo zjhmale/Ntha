@@ -14,6 +14,7 @@ a tiny statically typed functional programming language.
 * Support unicode keywords.
 * Support destructuring.
 * ADTs and pattern matching.
+* Haskell like type signature for type checking.
 * Support pattern matching on function parameters.
 * Lambdas and curried function by default.
 * Global and Local let binding.
@@ -26,7 +27,6 @@ a tiny statically typed functional programming language.
 ## Future Works
 
 * Atoms (need to handle mutable state in evaluation procedure, reference to the [implementation of Clea Programming Language](https://github.com/zjhmale/Clea/blob/master/src/Prologue.hs#L191-211)).
-* Haskell like type annotations for type checking.
 * Module system (also need to get a monadic evaluation procedure to read file content).
 * error propagation (try / catch).
 * Lazyness.
@@ -68,9 +68,11 @@ a tiny statically typed functional programming language.
              :less <
              :iff =})
 
+(arith-eval : (α → (β → Z)) → ((α × β) → (Maybe Expr)))
 (ƒ arith-eval [fn (v1 . v2)]
   (Just (Num (fn v1 v2))))
 
+(logic-eval : (α → (β → B)) → ((α × β) → (Maybe Expr)))
 (ƒ logic-eval [fn (v1 . v2)]
   (Just (Bool (fn v1 v2))))
 
@@ -87,7 +89,7 @@ a tiny statically typed functional programming language.
           (Iff ⇒ (logic-eval (:iff op-map) (v1 . v2)))))
       (_ ⇒ Nothing))))
 
-;; <fun> : [([Char] * Expr)] → (Expr → (Maybe Expr))
+(eval : [(S × Expr)] → (Expr → (Maybe Expr)))
 (ƒ eval [env expr]
   (match expr
     ((Num _) ⇒ (Just expr))

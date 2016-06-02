@@ -48,6 +48,7 @@
   [b t]
   (exists? b (free-vars t)))
 
+(unify : Type → (Type → [(Number × Type)]))
 (ƒ unify
   [t1 t2]
   (match (t1 . t2)
@@ -78,6 +79,7 @@
 (asserteq (unify mono1 mono2) [(tvarB . (TPrim "int")) (tvarA . (TPrim "int"))])
 (asserteq (unify mono3 mono4) [(tvarB . (TVar tvarC)) (tvarA . ((TVar tvarC) :~> (TVar tvarC)))])
 
+(make-fresh : Number → ([α] → ([(α × Type)] × Number)))
 (ƒ make-fresh
   [fresh bs]
   (match bs
@@ -85,6 +87,7 @@
     (h :: t → (match (make-fresh (inc fresh) t)
                 ((s . fresh') → (((h . (TVar fresh)) :: s) . fresh'))))))
 
+(instantiate : Number → (Type → (Type × Number)))
 (ƒ instantiate
   [fresh t]
   (match t
@@ -92,11 +95,13 @@
                        ((subst subrule t') . fresh')))
     (_ → (t . fresh))))
 
+(generalize : [(Number × α)] → (Type → Type))
 (ƒ generalize
   [ctx t]
   (let [frees (nub (diff-list (free-vars t) (map fst ctx)))]
     (TPoly frees t)))
 
+(w' : Number → ([(Number × Type)] → (Expr → (([(Number × Type)] × Type) × Number))))
 (ƒ w'
   [fresh ctx expr]
   (match expr
