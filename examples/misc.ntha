@@ -7,6 +7,7 @@
     ([a _] ⇒ a)
     (_ :: t ⇒ (penultimate t))))
 
+(fib : Z → Z)
 (ƒ fib [x]
   (match x
     (0 ⇒ 0)

@@ -5,7 +5,7 @@ module Type where
 import State
 import Data.IORef
 import Data.List (intercalate)
-import Control.Monad (foldM)
+import Control.Monad (foldM, liftM)
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -22,6 +22,7 @@ data Type = TVar Id (IORef TInstance) TName -- type variable
           | TOper TName Types -- type operator
           | TRecord (M.Map TField Type)
           | TCon TName Types Type
+          | TSig Type
 
 intT :: Type
 intT = TOper "Number" []
@@ -101,6 +102,7 @@ stringOfType subrule (TCon name types dataType) = do
     _ -> do
       typesStr <- (intercalate ", ") <$> mapM (stringOfType subrule) types
       return $ "(" ++ name ++ " " ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
+stringOfType subrule (TSig t) = liftM ("typesig: " ++) $ stringOfType subrule t
 
 getFreeVars :: Type -> Infer (S.Set TName)
 getFreeVars (TVar _ inst name) = do
@@ -120,6 +122,7 @@ getFreeVars (TCon _ types dataType) = foldM (\acc t -> do
                                               freeVars <- getFreeVars t
                                               return $ S.union freeVars acc)
                                             S.empty $ types ++ [dataType]
+getFreeVars (TSig t) = getFreeVars t
 
 normalize :: Type -> Infer String
 normalize t = do
@@ -137,6 +140,7 @@ instance Eq Type where
   TOper name1 args1 == TOper name2 args2 = name1 == name2 && args1 == args2
   TRecord pairs1 == TRecord pairs2 = pairs1 == pairs2
   TCon name1 types1 dataType1 == TCon name2 types2 dataType2 = name1 == name2 && types1 == types2 && dataType1 == dataType2
+  TSig t1 == TSig t2 = t1 == t2
   _ == _ = False
 
 instance Ord Type where
@@ -146,6 +150,7 @@ instance Ord Type where
     TOper name1 args1 <= TOper name2 args2 = name1 <= name2 && args1 <= args2
     TRecord pairs1 <= TRecord pairs2 = pairs1 <= pairs2
     TCon name1 types1 dataType1 <= TCon name2 types2 dataType2 = name1 <= name2 && types1 <= types2 && dataType1 <= dataType2
+    TSig t1 <= TSig t2 = t1 <= t2
     _ <= _ = False
 
 makeVariable :: Infer Type

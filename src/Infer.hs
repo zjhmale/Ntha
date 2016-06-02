@@ -57,7 +57,8 @@ fresh t nonGeneric = do
                                                                     fv <- freshrec v
                                                                     return $ M.insert k fv acc)
                                                                    M.empty $ M.toList valueTypes
-                                            return $ TRecord newValueTypes)
+                                            return $ TRecord newValueTypes
+                                          _ -> return tyP)
   freshrec t
 
 getType :: TName -> TypeScope -> NonGeneric -> Infer Type
@@ -222,6 +223,10 @@ analyze term scope nonGeneric = case term of
                                     (scope', _) <- analyze (EDestructLetBinding main [] [def]) scope nonGeneric
                                     foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope', unitT) body
                                   EDestructLetBinding main args instructions -> do
+                                    let name = case main of
+                                                 IdPattern n -> n
+                                                 _ -> ""
+                                    let typeAnno = lookup name scope
                                     let newScope = child scope
                                     (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric
                                     let newNonGeneric' = S.insert letTV newNonGeneric
@@ -232,6 +237,9 @@ analyze term scope nonGeneric = case term of
                                     rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope'' newNonGeneric'') unitT instructions
                                     let letT = functionT argTypes rtnT
                                     newScope''' <- definePattern main letT newScope''
+                                    case typeAnno of
+                                      Just (TSig ta) -> unify ta letT
+                                      _ -> return ()
                                     return (newScope''', letT)
                                   EDataDecl _ t _ tconstructors -> do
                                     let newScope = foldl (\env (TypeConstructor conName conTypes) ->
@@ -251,5 +259,5 @@ analyze term scope nonGeneric = case term of
                                                      return rt)
                                                    resT cases
                                     return (scope, resT')
-                                  ETypeAnno _ _ -> undefined
+                                  ETypeSig name t -> return (insert name (TSig t) scope, unitT)
                                   EProgram instructions -> foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions

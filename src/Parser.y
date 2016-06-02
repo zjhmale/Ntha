@@ -88,7 +88,7 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
      | '(' monad con Form ')'                        { unsafePerformIO $ do
                                                         $4 `seq` modifyIORef monadMap $ M.insert $3 $4
                                                         return $ EDestructLetBinding (IdPattern $3) [] [$4] }
-     | '(' VAR ':' Type ')'                          { ETypeAnno $2 $4 }
+     | '(' VAR ':' Type ')'                          { ETypeSig $2 $4 }
      | Form                                          { $1 }
 
 -- TODO should support arg parameter such as (Maybe Number)
