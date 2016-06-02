@@ -79,6 +79,7 @@
 
 (let t (Node (Leaf 5) 4 (Leaf 3)))
 
+(depth : (Tree α) → Z)
 (ƒ depth
   [t]
   (match t
@@ -170,3 +171,6 @@
          (print (bool2str (ev? 12)))
          (print (bool2str (od? 11)))
          (print (bool2str (od? 12)))))
+
+(id : α → α)
+(ƒ id [a] a)

@@ -80,9 +80,11 @@
              :less <
              :iff =})
 
+(arith-eval : (α → (β → Z)) → ((α × β) → (Maybe Expr)))
 (ƒ arith-eval [fn (v1 . v2)]
   (Just (Num (fn v1 v2))))
 
+(logic-eval : (α → (β → B)) → ((α × β) → (Maybe Expr)))
 (ƒ logic-eval [fn (v1 . v2)]
   (Just (Bool (fn v1 v2))))
 
@@ -99,7 +101,7 @@
           (Iff ⇒ (logic-eval (:iff op-map) (v1 . v2)))))
       (_ ⇒ Nothing))))
 
-;; <fun> : [([Char] * Expr)] → (Expr → (Maybe Expr))
+(eval : [([Char] × Expr)] → (Expr → (Maybe Expr)))
 (ƒ eval [env expr]
   (match expr
     ((Num _) ⇒ (Just expr))

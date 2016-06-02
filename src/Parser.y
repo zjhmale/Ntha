@@ -6,8 +6,9 @@ import Type
 import Lexer
 import State
 import Control.Monad
+import Data.List
 import Data.IORef
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, fromJust)
 import qualified Data.Map as M
 import System.IO.Unsafe (unsafePerformIO)
 }
@@ -50,6 +51,7 @@ import System.IO.Unsafe (unsafePerformIO)
     product  { PRODUCT }
     keyword  { KEYWORD $$ }
     VAR      { VAR $$ }
+    TVAR     { TVAR $$ }
     OPERATOR { OPERATOR $$ }
     number   { NUMBER $$ }
     boolean  { BOOLEAN $$ }
@@ -76,8 +78,8 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'      { EDestructLetBinding (IdPa
                                                                                                                                            getType arg = case arg of
                                                                                                                                                            EVCAVar aname -> readEnv env aname
                                                                                                                                                            EVCAOper aname operArgs -> TOper aname $ map (readEnv env) operArgs
-                                                                                                                                                           EVCAList arg' -> TOper "List" [getType arg']
-                                                                                                                                                           EVCATuple args -> TOper "*" (map getType args)
+                                                                                                                                                           EVCAList arg' -> listT (getType arg')
+                                                                                                                                                           EVCATuple args -> productT (map getType args)
                                                                                                                     in TypeConstructor cname cargs')
                                                                                    $5
                                                            return $ EDataDecl $3 dataType vars constructors' }
@@ -251,15 +253,17 @@ Atom : boolean                                       { EBool $1 }
 Type : AtomType                             { $1 }
      | AtomType rarrow Type                 { arrowT $1 $3 }
 
-AtomType : TNumber                          { intT }
+AtomType : TVAR                             { fromJust $ M.lookup $1 tvarMap }
+         | TNumber                          { intT }
          | TBool                            { boolT }
          | TChar                            { charT }
          | TString                          { strT }
+         | con Types                        { TOper $1 $2 }
          | '[' Type ']'                     { listT $2 }
          | '(' TupleTypes ')'               { productT $2 }
          | '(' Type ')'                     { $2 }
 
-Types : Type                                { [$1] }
+Types : {- empty -}                         { [] }
       | Type Types                          { $1 : $2 }
 
 TupleTypes : Type product Type              { [$1, $3] }
@@ -276,6 +280,13 @@ aliasArgName :: Expr -> Expr
 aliasArgName expr@(ELambda nameds t exprs) = substName subrule expr
   where
   subrule = M.fromList $ foldl (\rule (Named name _) -> rule ++ [(name, name ++ "__monadarg__")]) [] nameds
+
+tvarMap :: M.Map Char Type
+tvarMap = unsafePerformIO $ do
+  foldM (\m greek -> do
+          tvar <- makeVariable
+          return $ M.insert greek tvar m)
+        M.empty ['α'..'ω']
 
 parseError :: [Token] -> a
 parseError _ = error "Parse error"

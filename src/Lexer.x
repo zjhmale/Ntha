@@ -8,9 +8,10 @@ import Data.Char (toUpper)
 
 $upper = [A-Z]
 $lower = [a-z]
+$greek = [α-ω]
 $digit = [0-9]
 $operator = [\+\-\*\/\%\=\>\<\∧\∨\¬\?\'\~\!]
-$chars = [$lower $upper $digit $operator]
+$chars = [$lower $upper $digit $operator $greek]
 $eol = [\n]
 
 tokens :-
@@ -52,6 +53,7 @@ tokens :-
        "true" | "false"            { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $upper $chars*              { \s -> CON s }
        $lower $chars*              { \s -> VAR s }
+       $greek                      { \s -> TVAR (s!!0) }
        \"[^\"]*\"                  { \s -> STRING ((tail . init) s) }
        '[^'\"]{1}'                 { \s -> CHAR ((head . tail . init) s) }
        $operator | "≠" | "≤" | "≥" { \s -> OPERATOR s }
@@ -84,6 +86,7 @@ data Token = DATA
            | COLON
            | DOUBLECOLON
            | VAR EName
+           | TVAR Char
            | CON EName -- constructor names or uppercase symbols
            | LET
            | NUMBERT
