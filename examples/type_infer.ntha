@@ -75,9 +75,12 @@
 (let mono2 ((TVar tvarB) :~> (TVar tvarB)))
 (let mono3 ((TVar tvarA) :~> (TVar tvarB)))
 (let mono4 (((TVar tvarB) :~> (TVar tvarC)) :~> (TVar tvarC)))
+(let mono5 ((TVar tvarA) :~> (TVar tvarB)))
+(let mono6 ((TVar tvarC) :~> (TVar tvarA)))
 
 (asserteq (unify mono1 mono2) [(tvarB . (TPrim "int")) (tvarA . (TPrim "int"))])
 (asserteq (unify mono3 mono4) [(tvarB . (TVar tvarC)) (tvarA . ((TVar tvarC) :~> (TVar tvarC)))])
+(asserteq (unify mono5 mono6) [(tvarB . (TVar tvarC)) (tvarA . (TVar tvarC))])
 
 (make-fresh : Number → ([α] → ([(α × Type)] × Number)))
 (ƒ make-fresh
