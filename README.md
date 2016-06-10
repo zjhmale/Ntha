@@ -31,10 +31,10 @@ a tiny statically typed functional programming language.
 * error propagation (try / catch).
 * Lazyness.
 * JIT backend.
-* Type-classes.
-* Rank-N types.
+* Type-classes (desuger to Records).
+* Rank-N types ([a naive implementation of First-Class Polymorphism](https://github.com/zjhmale/HMF/tree/master/src/FCP)).
 * Dependent types.
-* Fully type checked lisp like macros (need to make the syntax more isomorphic).
+* Fully type checked lisp like macros (comply with the internal design of Template Haskell).
 * TCO.
 
 ## Screenshot
