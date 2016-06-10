@@ -44,6 +44,7 @@ tokens :-
        ":" $chars+                 { \s -> KEYWORD (tail s) }
        ":"                         { \_ -> COLON }
        "∷" | "::"                  { \_ -> DOUBLECOLON }
+       "|"                         { \_ -> BAR }
        "let"                       { \_ -> LET }
        "Z"                         { \_ -> NUMBERT }
        "B"                         { \_ -> BOOLT }
@@ -85,6 +86,7 @@ data Token = DATA
            | DOT
            | COLON
            | DOUBLECOLON
+           | BAR
            | VAR EName
            | TVAR Char
            | CON EName -- constructor names or uppercase symbols

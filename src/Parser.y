@@ -3,6 +3,7 @@ module Parser where
 
 import Ast
 import Type
+import Refined (convertSig)
 import Lexer
 import State
 import Control.Monad
@@ -43,6 +44,7 @@ import System.IO.Unsafe (unsafePerformIO)
     '.'      { DOT }
     ':'      { COLON }
     '::'     { DOUBLECOLON }
+    '|'      { BAR }
     let      { LET }
     TNumber  { NUMBERT }
     TBool    { BOOLT }
@@ -264,6 +266,9 @@ AtomType : TVAR                                            { fromJust $ M.lookup
          | '[' Type ']'                                    { listT $2 }
          | '(' TupleTypes ')'                              { productT $2 }
          | '(' Type ')'                                    { $2 }
+         | RefinedType                                     { $1 }
+
+RefinedType : '(' VAR ':' Type Form ')'                    { TRefined $4 (convertSig $5) }
 
 Types : {- empty -}                                        { [] }
       | Type Types                                         { $1 : $2 }

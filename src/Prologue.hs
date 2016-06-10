@@ -10,6 +10,7 @@ import qualified Data.Map as M
 
 mkTCon :: TypeConstructor -> Expr -> Type
 mkTCon (TypeConstructor name types) (EDataDecl _ t _ _) = TCon name types t
+mkTCon _ _ = error "not support"
 
 assumptions :: Infer TypeScope
 assumptions = do
