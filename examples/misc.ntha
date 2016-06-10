@@ -174,3 +174,13 @@
 
 (id : α → α)
 (ƒ id [a] a)
+
+(asserteq (id 3) 3)
+(asserteq (id true) true)
+
+(asserteq ((λ(x: α) : α → x) 3) 3)
+(asserteq ((λ(x: α) : α → x) true) true)
+
+(let id' (λ(x: α) : α → x))
+(asserteq (id' 3) 3)
+(asserteq (id' true) true)

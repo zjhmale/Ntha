@@ -203,7 +203,10 @@ analyze term scope nonGeneric = case term of
                                     case annoT of
                                       Just annoT' -> unify rtnT annoT' -- type propagation from return type to param type
                                       Nothing -> return ()
-                                    return (scope, functionT paramTypes rtnT)
+                                    -- use fresh just to make sure sequence of lambda abstractions with same type var name could work well e.g.
+                                    -- ((λ(x: α) : α → x) 3)
+                                    -- ((λ(x: α) : α → x) true)
+                                    (scope,) <$> fresh (functionT paramTypes rtnT) nonGeneric
                                   EAccessor obj field -> do
                                     (_, objT) <- analyze obj scope nonGeneric
                                     fieldT <- makeVariable
