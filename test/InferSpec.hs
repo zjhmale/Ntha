@@ -3,7 +3,6 @@ module InferSpec where
 import Ast
 import Type
 import Infer
-import TypeScope
 import State (resetId, resetUniqueName)
 import Control.Monad (foldM)
 import Prologue
@@ -24,9 +23,9 @@ runInferSpecCases exprExpectPairs = do
     (map (PP.text . show) types) `shouldBe` map PP.text expects
 
 failInferSpecCase :: Expr -> String -> IO ()
-failInferSpecCase expr error = do
+failInferSpecCase expr errorMsg = do
     assumps <- assumptions
-    analyze expr assumps S.empty `shouldThrow` errorCall error
+    analyze expr assumps S.empty `shouldThrow` errorCall errorMsg
     resetId
     resetUniqueName
 
@@ -119,7 +118,7 @@ spec = describe "inference test" $ do
           let f = EDestructLetBinding (IdPattern "f") [] [ELambda [Named "x" (Just intT), Named "y" (Just intT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
           let ff = EDestructLetBinding (IdPattern "ff") [] [ELambda [Named "x" (Just intT), Named "y" (Just boolT), Named "z" (Just intT)] (Just intT) [EApp (EApp (EVar "+") (EApp (EApp (EVar "+") $ EVar "x") $ EVar "y")) $ EVar "z"]]
           let res1 = EDestructLetBinding (IdPattern "res1") [] [EApp (EApp (EApp (EVar "f") $ ENum 8) $ ENum 2) $ ENum 3]
-          let id = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
+          let idfn = EDestructLetBinding (IdPattern "id") [] [ELambda [Named "x" Nothing] Nothing [EVar "x"]]
           let res2 = EDestructLetBinding (IdPattern "res2") [] [EApp (EVar "id") $ ENum 3]
           let res3 = EDestructLetBinding (IdPattern "res3") [] [EApp (EVar "id") $ EBool True]
           -- let polymorphism here!!!
@@ -133,7 +132,7 @@ spec = describe "inference test" $ do
                              (res0, "Number"),
                              (f, "Number → (Number → (Number → Number))"),
                              (res1, "Number"),
-                             (id, "α → α"),
+                             (idfn, "α → α"),
                              (res2, "Number"),
                              (res3, "Boolean"),
                              (idpair, "(Number * Boolean)"),
@@ -151,7 +150,7 @@ spec = describe "inference test" $ do
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "a", TConPattern "Cons" [WildcardPattern, TConPattern "Nil" []]]) [EVar "a"],
                                                                                                                                     Case (TConPattern "Cons" [IdPattern "x", TConPattern "Cons" [IdPattern "y", IdPattern "t"]]) [EApp (EVar "penultimate") (EVar "t")]]]]
           let res4 = EDestructLetBinding (IdPattern "res4") [] [EApp (EVar "penultimate") (EList [ENum 1, ENum 2, ENum 3])]
-          let map = EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"],Case (TConPattern "Nil" []) [EVar "Nil"]]]
+          let map1 = EDestructLetBinding (IdPattern "map") [IdPattern "f", IdPattern "l"] [EPatternMatching (EVar "l") [Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map") $ EVar "f") $ EVar "t"],Case (TConPattern "Nil" []) [EVar "Nil"]]]
           let map2 = EDestructLetBinding (IdPattern "map2") [IdPattern "f", IdPattern "xs"] [EPatternMatching (EVar "xs") [Case (TConPattern "Nil" []) [EList []],Case (TConPattern "Cons" [IdPattern "h", IdPattern "t"]) [EApp (EApp (EVar "Cons") $ EApp (EVar "f") $ EVar "h") $ EApp (EApp (EVar "map2") $ EVar "f") $ EVar "t"]]]
           let l = EDestructLetBinding (IdPattern "l") [] [EList [ENum 1, ENum 2, ENum 3]]
           let l3 = EDestructLetBinding (IdPattern "l3") [] [EApp (EApp (EVar "map") $ ELambda [Named "x" Nothing] Nothing [EApp (EApp (EVar "=") $ EApp (EApp (EVar "%") $ EVar "x") $ ENum 2) $ ENum 0]) $ EVar "l"]
@@ -176,7 +175,7 @@ spec = describe "inference test" $ do
                              (fib0, "Number"),
                              (penultimate, "[Number] → Number"),
                              (res4, "Number"),
-                             (map, "(α → β) → ([α] → [β])"),
+                             (map1, "(α → β) → ([α] → [β])"),
                              (map2, "(α → β) → ([α] → [β])"),
                              (l, "[Number]"),
                              (l3, "[Boolean]"),

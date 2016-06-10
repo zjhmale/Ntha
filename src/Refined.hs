@@ -2,9 +2,7 @@ module Refined where
 
 import Ast
 import TypeScope
-import Z3.Logic
 import Z3.Class
-import Z3.Encoding
 import Z3.Assertion
 import Z3.Monad
 
@@ -97,6 +95,7 @@ instance Z3Sorted Term where
     sort (TmSub _ _) = mkIntSort
     sort (TmMul _ _) = mkIntSort
     sort (TmDiv _ _) = mkIntSort
+    sort (TmEqual _ _) = mkBoolSort
     sort (TmAnd _ _) = mkBoolSort
     sort (TmOr _ _) = mkBoolSort
     sort (TmNot _) = mkBoolSort
@@ -134,6 +133,7 @@ convert term scope = case term of
                                          case op of
                                            "¬" -> return (scope, TmNot argTerm)
                                            _ -> error "not support"
+                                       _ -> error "not support"
                        EIf cond thenInstructions elseInstructions -> do
                          (_, condTerm) <- convert cond scope
                          (_, thenTerm) <- convert (thenInstructions!!0) scope

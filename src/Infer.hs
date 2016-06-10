@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE TupleSections #-}
-
 module Infer where
 
 import Ast

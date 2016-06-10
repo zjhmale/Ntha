@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-
 module State where
 
 import Data.IORef

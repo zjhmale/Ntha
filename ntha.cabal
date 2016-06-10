@@ -34,13 +34,15 @@ library
                      , z3-encoding
   build-tools:         happy
                      , alex
-  default-extensions:  StandaloneDeriving
+  default-extensions:  TupleSections
+                     , StandaloneDeriving
   default-language:    Haskell2010
+  ghc-options:         -Wall
 
 executable ntha-exe
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:       base
                      , ntha
                      , containers
@@ -61,7 +63,8 @@ test-suite ntha-test
                      , hspec >= 1.3
                      , containers
                      , pretty
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-extensions:  UnicodeSyntax
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   default-language:    Haskell2010
 
 source-repository head

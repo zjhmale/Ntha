@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-
 module Eval where
 
 import Ast

@@ -16,6 +16,8 @@ import qualified Data.Set as S
 import qualified Control.Exception as E
 
 type Env = (TypeScope, ValueScope)
+
+emptyEnv :: (TypeScope, ValueScope)
 emptyEnv = (TypeScope Nothing M.empty, ValueScope Nothing M.empty)
 
 loadlib :: IO Env
@@ -28,15 +30,15 @@ loadlib = do
   return (stdassumps, stdbuiltins)
 
 process :: Env -> String -> IO Env
-process (assumps, builtins) expr = E.catch (do
+process (assumps, prevBuiltins) expr = E.catch (do
                                             let ast = parseExpr expr
                                             (assumps', t) <- analyze ast assumps S.empty
-                                            let (builtins', v) = eval ast builtins
+                                            let (builtins', v) = eval ast prevBuiltins
                                             putStrLn $ show v ++ " : " ++ show t
                                             return (assumps', builtins'))
                                            (\(E.ErrorCall e) -> do
                                             putStrLn e
-                                            return (assumps, builtins))
+                                            return (assumps, prevBuiltins))
 
 loop :: Env -> InputT IO Env
 loop env = do
@@ -45,7 +47,7 @@ loop env = do
     Nothing -> do
       outputStrLn "Goodbye."
       return emptyEnv
-    Just input -> (liftIO $ process env input) >>= (\env -> loop env)
+    Just input -> (liftIO $ process env input) >>= (\env' -> loop env')
 
 prologueMessage :: String
 prologueMessage = intercalate "\n"

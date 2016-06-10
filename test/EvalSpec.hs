@@ -1,5 +1,3 @@
-{-# LANGUAGE UnicodeSyntax #-}
-
 module EvalSpec where
 
 import Ast

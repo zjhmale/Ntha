@@ -2,7 +2,6 @@ module ParserSpec where
 
 import Ast
 import Type
-import State
 import Parser
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
