@@ -229,7 +229,7 @@ analyze term scope nonGeneric = case term of
                                     let name = case main of
                                                  IdPattern n -> n
                                                  _ -> ""
-                                    let typeAnno = lookup name scope
+                                    let typeSig = lookup name scope
                                     let newScope = child scope
                                     (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric
                                     let newNonGeneric' = S.insert letTV newNonGeneric
@@ -240,7 +240,7 @@ analyze term scope nonGeneric = case term of
                                     rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope'' newNonGeneric'') unitT instructions
                                     let letT = functionT argTypes rtnT
                                     newScope''' <- definePattern main letT newScope''
-                                    case typeAnno of
+                                    case typeSig of
                                       Just (TSig ta) -> unify ta letT
                                       _ -> return ()
                                     return (newScope''', letT)
