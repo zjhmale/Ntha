@@ -21,6 +21,7 @@ library
                      , State
                      , Infer
                      , Eval
+                     , Refined
                      , Prologue
                      , Lexer
                      , Parser
@@ -29,8 +30,11 @@ library
                      , pretty
                      , monad-loops
                      , array
+                     , z3 >=4.4.1
+                     , z3-encoding
   build-tools:         happy
                      , alex
+  default-extensions:  StandaloneDeriving
   default-language:    Haskell2010
 
 executable ntha-exe
@@ -47,6 +51,9 @@ executable ntha-exe
 
 test-suite ntha-test
   type:                exitcode-stdio-1.0
+  other-modules:       EvalSpec
+                     , InferSpec
+                     , ParserSpec
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
