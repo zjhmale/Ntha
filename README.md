@@ -15,6 +15,7 @@ a tiny statically typed functional programming language.
 * Support destructuring.
 * ADTs and pattern matching.
 * Haskell like type signature for type checking.
+* Refined types (still in early stage, just support basic arithmetic operations and propositinal logic :joy: [here is some examples](https://github.com/zjhmale/Ntha/blob/master/examples/misc.ntha#L188-195))
 * Support pattern matching on function parameters.
 * Lambdas and curried function by default.
 * Global and Local let binding.
