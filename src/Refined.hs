@@ -3,9 +3,15 @@ module Refined where
 import Ast
 import Type
 import TypeScope
+import Z3.Class
 import Z3.Logic
+import Z3.Context
+import Z3.Encoding
 import Z3.Assertion
+import Z3.Monad
 import Prelude hiding (lookup)
+import Control.Monad (mapM_)
+import Control.Monad.IO.Class (liftIO)
 
 genPred :: Term -> Z3Pred
 genPred term = case term of
@@ -79,29 +85,57 @@ convertProg expr scope = case expr of
                            -- only support exists and exists2 for now
                            EDestructLetBinding main args (instruction:[]) -> do
                              let name = case main of
-                                          IdPattern n -> n
+                                          IdPattern n -> n ++ "-sig"
                                           _ -> ""
                              let typeSig = lookup name scope
                              let argNames = map (\pat -> case pat of
                                                           IdPattern n -> n
-                                                          _ -> error "not support")
+                                                          _ -> show pat)
                                                 args
-                             let rtnTerm = convertProg' instruction
                              case typeSig of
                                Just (TSig ta) -> do
                                  let terms = extractTerm ta
                                  let predNames = getPredNames ta
                                  case predNames of
-                                   [] -> return PTrue
+                                   -- (¬ ⊥) always satisfied
+                                   [] -> return PFalse
                                    _ -> case (argNames, terms) of
+                                         (_, []) -> return PFalse -- for normal type signature
                                          ([n], [rtnTerm']) -> return $ PExists n RTInt $ genRtnPred' rtnTerm'
                                          ([n1, n2], [rtnTerm']) -> return $ PExists2 n1 n2 RTInt $ genRtnPred' rtnTerm'
                                          ([n], [argTerm, rtnTerm']) -> return $ PExists n RTInt $ PConj (genPred argTerm) $ genRtnPred' rtnTerm'
                                          ([n1, n2], [argTerm1, argTerm2, rtnTerm']) -> return $ PExists2 n1 n2 RTInt $ PConj (PConj (genPred argTerm1) $ genPred argTerm2) $ genRtnPred' rtnTerm'
                                          _ -> error "not support"
                                        where rtnName = last predNames
+                                             rtnTerm = convertProg' instruction
                                              genRtnPred' :: Term -> Z3Pred
                                              genRtnPred' = genRtnPred rtnName rtnTerm
-                               -- always satisfied
-                               _ -> return PTrue
+                               -- (¬ ⊥) always satisfied
+                               _ -> return PFalse
+                           EProgram (instruction:_) -> convertProg instruction scope
                            _ -> error "not support"
+
+checkPre :: Z3Pred -> Z3SMT () (Result, Maybe Model)
+checkPre pre = local $ do
+    ast <- encode pre
+    local (assert ast >> getModel)
+
+checker :: Expr -> TypeScope -> IO ()
+checker expr scope = case expr of
+                       EDestructLetBinding _ _ _ -> do
+                         pred <- convertProg expr scope
+                         -- trade off
+                         let adts = [("", [("", [("", RTInt)])])]
+                         ret <- runSMT adts () $ do
+                                  (r, _mm) <- checkPre pred
+                                  case r of
+                                      Unsat -> do
+                                          core <- getUnsatCore
+                                          liftIO $ sequence_ (map print core)
+                                          return r
+                                      other -> return other
+                         if ret == Right Unsat
+                         then return ()
+                         else error "refined type check failed"
+                       EProgram instructions -> mapM_ (\instr -> checker instr scope) instructions
+                       _ -> return ()

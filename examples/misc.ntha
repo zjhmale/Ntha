@@ -184,3 +184,6 @@
 (let id' (λ(x: α) : α → x))
 (asserteq (id' 3) 3)
 (asserteq (id' true) true)
+
+(foo1 : (x : Z | (> x 5)) → (z : Z | (> z 0)))
+(ƒ foo1 [x] (- x 5))

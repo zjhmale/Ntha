@@ -59,10 +59,10 @@
 (asserteq (lvar? (lvar "ntha")) true)
 (asserteq (lvar? "ntha") false)
 
-(let va = (lvar "a"))
-(let vb = (lvar "b"))
-(let vc = (lvar "c"))
-(let vd = (lvar "d"))
+(let va (lvar "a"))
+(let vb (lvar "b"))
+(let vc (lvar "c"))
+(let vd (lvar "d"))
 
 (let empty-subrule [])
 

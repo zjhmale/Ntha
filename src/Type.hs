@@ -208,6 +208,7 @@ data Term = TmVar   String
 
 deriving instance Eq Term
 deriving instance Ord Term
+deriving instance Show Term
 
 -- currently just support integer
 data RType = RTInt

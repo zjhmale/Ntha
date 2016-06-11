@@ -2,6 +2,7 @@ module Main where
 
 import Eval (eval)
 import Infer (analyze)
+import Refined (checker)
 import Parser (parseExpr)
 import Value (ValueScope(..))
 import TypeScope (TypeScope(..))
@@ -26,6 +27,7 @@ loadlib = do
   std <- readFile "./lib/std.ntha"
   let stdast = parseExpr std
   (stdassumps, _) <- analyze stdast assumps S.empty
+  checker stdast stdassumps
   let (stdbuiltins, _) = eval stdast builtins
   return (stdassumps, stdbuiltins)
 
@@ -33,6 +35,7 @@ process :: Env -> String -> IO Env
 process (assumps, prevBuiltins) expr = E.catch (do
                                             let ast = parseExpr expr
                                             (assumps', t) <- analyze ast assumps S.empty
+                                            checker ast assumps'
                                             let (builtins', v) = eval ast prevBuiltins
                                             putStrLn $ show v ++ " : " ++ show t
                                             return (assumps', builtins'))

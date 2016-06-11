@@ -224,7 +224,7 @@ analyze term scope nonGeneric = case term of
                                     foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope', unitT) body
                                   EDestructLetBinding main args instructions -> do
                                     let name = case main of
-                                                 IdPattern n -> n
+                                                 IdPattern n -> n ++ "-sig"
                                                  _ -> ""
                                     let typeSig = lookup name scope
                                     let newScope = child scope
@@ -261,5 +261,5 @@ analyze term scope nonGeneric = case term of
                                                      return rt)
                                                    resT cases
                                     return (scope, resT')
-                                  ETypeSig name t -> return (insert name (TSig t) scope, unitT)
+                                  ETypeSig name t -> return (insert (name ++ "-sig") (TSig t) scope, unitT)
                                   EProgram instructions -> foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions
