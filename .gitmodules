@@ -1,0 +1,6 @@
+[submodule "z3-haskell"]
+	path = z3-haskell
+	url = https://github.com/izgzhen/z3-haskell
+[submodule "z3-encoding"]
+	path = z3-encoding
+	url = https://github.com/izgzhen/z3-encoding

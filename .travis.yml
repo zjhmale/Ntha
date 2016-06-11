@@ -11,8 +11,7 @@ before_install:
   - export PATH=~/.local/bin:$PATH
   - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar -xzO --wildcards '*/stack' > ~/.local/bin/stack
   - chmod a+x ~/.local/bin/stack
-  - git clone https://github.com/izgzhen/z3-haskell ${TRAVIS_BUILD_DIR//Ntha/z3-haskell}
-  - git clone https://github.com/izgzhen/z3-encoding ${TRAVIS_BUILD_DIR//Ntha/z3-encoding}
+  - git submodule update
 
 matrix:
   include:

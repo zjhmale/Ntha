@@ -6,8 +6,8 @@ resolver: nightly-2016-06-04
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- '../z3-haskell'
-- '../z3-encoding'
+- './z3-haskell'
+- './z3-encoding'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []
