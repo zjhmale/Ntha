@@ -6,6 +6,7 @@ import Data.List (intercalate)
 import Control.Monad (foldM, liftM)
 import Data.Maybe (fromMaybe)
 import Z3.Class
+import Z3.Logic
 import Z3.Assertion
 import Z3.Monad
 import qualified Data.Map as M
@@ -18,13 +19,14 @@ type TName = String
 type TField = String
 type Types = [Type]
 type TInstance = Maybe Type
+type Z3Pred = Pred Term RType Assertion
 
 data Type = TVar Id (IORef TInstance) TName -- type variable
           | TOper TName Types -- type operator
           | TRecord (M.Map TField Type)
           | TCon TName Types Type
           | TSig Type
-          | TRefined String Type Term
+          | TRefined String Type Z3Pred
 
 -- extract normal type from refined type for type inference
 extractType :: Type -> Type
@@ -33,6 +35,12 @@ extractType t = case t of
                   TOper "→" args -> TOper "→" (map extractType args)
                   TRefined _ t' _ -> t'
                   _ -> t
+
+extractPred :: Type -> [Z3Pred]
+extractPred t = case t of
+                  TOper "→" args -> args >>= extractPred
+                  TRefined _ _ p -> [p]
+                  _ -> []
 
 intT :: Type
 intT = TOper "Number" []
@@ -153,7 +161,8 @@ instance Eq Type where
   TRecord pairs1 == TRecord pairs2 = pairs1 == pairs2
   TCon name1 types1 dataType1 == TCon name2 types2 dataType2 = name1 == name2 && types1 == types2 && dataType1 == dataType2
   TSig t1 == TSig t2 = t1 == t2
-  TRefined x1 t1 tm1 == TRefined x2 t2 tm2 = x1 == x2 && t1 == t2 && tm1 == tm2
+  -- No instance for (Eq Z3Pred)
+  TRefined x1 t1 _ == TRefined x2 t2 _ = x1 == x2 && t1 == t2
   _ == _ = False
 
 instance Ord Type where
@@ -164,7 +173,8 @@ instance Ord Type where
     TRecord pairs1 <= TRecord pairs2 = pairs1 <= pairs2
     TCon name1 types1 dataType1 <= TCon name2 types2 dataType2 = name1 <= name2 && types1 <= types2 && dataType1 <= dataType2
     TSig t1 <= TSig t2 = t1 <= t2
-    TRefined x1 t1 tm1 <= TRefined x2 t2 tm2 = x1 <= x2 && t1 <= t2 && tm1 <= tm2
+    -- No instance for (Ord Z3Pred)
+    TRefined x1 t1 _ <= TRefined x2 t2 _ = x1 <= x2 && t1 <= t2
     _ <= _ = False
 
 makeVariable :: Infer Type
@@ -178,7 +188,6 @@ makeVariable = do
 
 data Term = TmVar   String
           | TmNum   Int
-          | TmBool  Bool
           | TmLT    Term Term
           | TmGT    Term Term
           | TmLE    Term Term
@@ -196,8 +205,8 @@ data Term = TmVar   String
 deriving instance Eq Term
 deriving instance Ord Term
 
-data RType = RTBool
-           | RTInt
+-- currently just support integer
+data RType = RTInt
 
 deriving instance Eq RType
 deriving instance Ord RType
@@ -209,7 +218,6 @@ instance Z3Encoded Term where
             Just (idx, _) -> return idx
             Nothing -> smtError $ "Can't find variable " ++ x
     encode (TmNum n) = mkIntSort >>= mkInt n
-    encode (TmBool b) = mkBool b
     encode (TmLT t1 t2) = encode (Less t1 t2)
     encode (TmGT t1 t2) = encode (Greater t1 t2)
     encode (TmLE t1 t2) = encode (LessE t1 t2)
@@ -256,7 +264,6 @@ instance Z3Sorted Term where
             Just (_, s) -> return s
             Nothing -> smtError $ "Can't find variable " ++ x
     sort (TmNum _) = mkIntSort
-    sort (TmBool _) = mkBoolSort
     sort (TmLT _ _) = mkBoolSort
     sort (TmGT _ _) = mkBoolSort
     sort (TmLE _ _) = mkBoolSort
@@ -272,5 +279,4 @@ instance Z3Sorted Term where
     sort (TmIf _ c _) = sort c
 
 instance Z3Sorted RType where
-    sort RTBool = mkBoolSort
     sort RTInt  = mkIntSort
