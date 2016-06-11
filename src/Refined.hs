@@ -31,10 +31,10 @@ convertSig term = case term of
                                                 _ -> error "not support"
                                       where argTerm = convertSig arg
                                     _ -> error "not support"
-                    EIf cond thenInstructions elseInstructions -> TmIf condTerm thenTerm elseTerm
+                    EIf cond (thenInstruction:[]) (elseInstruction:[]) -> TmIf condTerm thenTerm elseTerm
                       where condTerm = convertSig cond
-                            thenTerm = convertSig (thenInstructions!!0)
-                            elseTerm = convertSig (elseInstructions!!0)
+                            thenTerm = convertSig thenInstruction
+                            elseTerm = convertSig elseInstruction
                     _ -> error "not support"
 
 convertProg :: Expr -> TypeScope -> IO (TypeScope, Term)
@@ -66,31 +66,19 @@ convertProg term scope = case term of
                                                "¬" -> return (scope, TmNot argTerm)
                                                _ -> error "not support"
                                            _ -> error "not support"
-                           EIf cond thenInstructions elseInstructions -> do
+                           EIf cond (thenInstruction:[]) (elseInstruction:[]) -> do
                              (_, condTerm) <- convertProg cond scope
-                             (_, thenTerm) <- convertProg (thenInstructions!!0) scope
-                             (_, elseTerm) <- convertProg (elseInstructions!!0) scope
+                             (_, thenTerm) <- convertProg thenInstruction scope
+                             (_, elseTerm) <- convertProg elseInstruction scope
                              return (scope, TmIf condTerm thenTerm elseTerm)
-                           {-
-                           EDestructLetBinding main args instructions -> do
+                           -- only support exists and exists2 for now
+                           {-EDestructLetBinding main args (instruction:[]) -> do
                              let name = case main of
                                           IdPattern n -> n
                                           _ -> ""
                              let typeSig = lookup name scope
-                             let newScope = child scope
-                             (newScope', newNonGeneric, letTV) <- visitPattern main newScope nonGeneric
-                             let newNonGeneric' = S.insert letTV newNonGeneric
-                             (argTypes, newScope'', newNonGeneric'') <- foldM (\(types, env, nonGen) arg -> do
-                                                                               (newEnv, newNonGen, argT) <- visitPattern arg env nonGen
-                                                                               return (types ++ [argT], newEnv, newNonGen))
-                                                                              ([], newScope', newNonGeneric') args
-                             rtnT <- foldM (\_ instr -> snd <$> analyze instr newScope'' newNonGeneric'') unitT instructions
-                             let letT = functionT argTypes rtnT
-                             newScope''' <- definePattern main letT newScope''
+                             instrTerm <- convertProg instruction scope
                              case typeSig of
                                Just (TSig ta) -> unify ta letT
-                               _ -> return ()
-                             return (newScope''', letT)
-                           -}
-                           --ETypeSig name t -> return (insert name (TSig t) scope, unitT)
+                               _ -> return (scope, instrTerm)-}
                            _ -> error "not support"

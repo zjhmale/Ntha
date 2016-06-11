@@ -24,7 +24,15 @@ data Type = TVar Id (IORef TInstance) TName -- type variable
           | TRecord (M.Map TField Type)
           | TCon TName Types Type
           | TSig Type
-          | TRefined Type Term
+          | TRefined String Type Term
+
+-- extract normal type from refined type for type inference
+extractType :: Type -> Type
+extractType t = case t of
+                  -- just support arrow type for now
+                  TOper "→" args -> TOper "→" (map extractType args)
+                  TRefined _ t' _ -> t'
+                  _ -> t
 
 intT :: Type
 intT = TOper "Number" []
@@ -105,6 +113,7 @@ stringOfType subrule (TCon name types dataType) = do
       typesStr <- (intercalate ", ") <$> mapM (stringOfType subrule) types
       return $ "(" ++ name ++ " " ++ typesStr ++ " ⇒ " ++ dataTypeStr ++ ")"
 stringOfType subrule (TSig t) = liftM ("typesig: " ++) $ stringOfType subrule t
+stringOfType subrule (TRefined _ t _) = liftM ("refined: " ++) $ stringOfType subrule t
 
 getFreeVars :: Type -> Infer (S.Set TName)
 getFreeVars (TVar _ inst name) = do
@@ -125,6 +134,7 @@ getFreeVars (TCon _ types dataType) = foldM (\acc t -> do
                                               return $ S.union freeVars acc)
                                             S.empty $ types ++ [dataType]
 getFreeVars (TSig t) = getFreeVars t
+getFreeVars (TRefined _ t _) = getFreeVars t
 
 normalize :: Type -> Infer String
 normalize t = do
@@ -143,6 +153,7 @@ instance Eq Type where
   TRecord pairs1 == TRecord pairs2 = pairs1 == pairs2
   TCon name1 types1 dataType1 == TCon name2 types2 dataType2 = name1 == name2 && types1 == types2 && dataType1 == dataType2
   TSig t1 == TSig t2 = t1 == t2
+  TRefined x1 t1 tm1 == TRefined x2 t2 tm2 = x1 == x2 && t1 == t2 && tm1 == tm2
   _ == _ = False
 
 instance Ord Type where
@@ -153,6 +164,7 @@ instance Ord Type where
     TRecord pairs1 <= TRecord pairs2 = pairs1 <= pairs2
     TCon name1 types1 dataType1 <= TCon name2 types2 dataType2 = name1 <= name2 && types1 <= types2 && dataType1 <= dataType2
     TSig t1 <= TSig t2 = t1 <= t2
+    TRefined x1 t1 tm1 <= TRefined x2 t2 tm2 = x1 <= x2 && t1 <= t2 && tm1 <= tm2
     _ <= _ = False
 
 makeVariable :: Infer Type
@@ -182,11 +194,13 @@ data Term = TmVar   String
           | TmIf    Term Term Term
 
 deriving instance Eq Term
+deriving instance Ord Term
 
 data RType = RTBool
            | RTInt
 
 deriving instance Eq RType
+deriving instance Ord RType
 
 instance Z3Encoded Term where
     encode (TmVar x) = do

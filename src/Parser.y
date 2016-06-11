@@ -268,7 +268,7 @@ AtomType : TVAR                                            { fromJust $ M.lookup
          | '(' Type ')'                                    { $2 }
          | RefinedType                                     { $1 }
 
-RefinedType : '(' VAR ':' Type Form ')'                    { TRefined $4 (convertSig $5) }
+RefinedType : '(' VAR ':' Type Form ')'                    { TRefined $2 $4 (convertSig $5) }
 
 Types : {- empty -}                                        { [] }
       | Type Types                                         { $1 : $2 }

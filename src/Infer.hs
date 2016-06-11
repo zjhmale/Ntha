@@ -238,7 +238,9 @@ analyze term scope nonGeneric = case term of
                                     let letT = functionT argTypes rtnT
                                     newScope''' <- definePattern main letT newScope''
                                     case typeSig of
-                                      Just (TSig ta) -> unify ta letT
+                                      Just (TSig ta) -> do
+                                        let ta' = extractType ta
+                                        unify ta' letT
                                       _ -> return ()
                                     return (newScope''', letT)
                                   EDataDecl _ t _ tconstructors -> do
