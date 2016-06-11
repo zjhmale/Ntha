@@ -23,7 +23,7 @@ genPred term = case term of
                  TmAnd t1 t2 -> PConj (genPred t1) (genPred t2)
                  TmOr t1 t2 -> PDisj (genPred t1) (genPred t2)
                  TmNot t -> PNeg (genPred t)
-                 _ -> error "not support"
+                 _ -> error $ "not support term: " ++ show term
 
 replaceRtnTerm :: String -> Term -> Term -> Term
 replaceRtnTerm rtnName rtnTerm predTerm = case predTerm of
@@ -66,19 +66,19 @@ convertProg' expr = case expr of
                                                               "≤" -> TmLE
                                                               "≥" -> TmGE
                                                               "=" -> TmEqual
-                                                              "∧" -> TmAdd
+                                                              "∧" -> TmAnd
                                                               "∨" -> TmOr
-                                                              _ -> error "not support"
+                                                              _ -> error $ "not support op: " ++ op
                                       EVar op -> case op of
                                                   "¬" -> let argTerm = convertProg' arg
                                                         in TmNot argTerm
-                                                  _ -> error "not support"
-                                      _ -> error "not support"
+                                                  _ -> error $ "not support op: " ++ op
+                                      _ -> error $ "not support fn: " ++ show fn
                       EIf cond (thenInstruction:[]) (elseInstruction:[]) -> TmIf condTerm thenTerm elseTerm
                         where condTerm = convertProg' cond
                               thenTerm = convertProg' thenInstruction
                               elseTerm = convertProg' elseInstruction
-                      _ -> error "not support"
+                      _ -> error $ "not support expr: " ++ show expr
 
 convertProg :: Expr -> TypeScope -> IO Z3Pred
 convertProg expr scope = case expr of
@@ -100,12 +100,11 @@ convertProg expr scope = case expr of
                                    -- (¬ ⊥) always satisfied
                                    [] -> return PFalse
                                    _ -> case (argNames, terms) of
-                                         (_, []) -> return PFalse -- for normal type signature
                                          ([n], [rtnTerm']) -> return $ PExists n RTInt $ genRtnPred' rtnTerm'
                                          ([n1, n2], [rtnTerm']) -> return $ PExists2 n1 n2 RTInt $ genRtnPred' rtnTerm'
                                          ([n], [argTerm, rtnTerm']) -> return $ PExists n RTInt $ PConj (genPred argTerm) $ genRtnPred' rtnTerm'
                                          ([n1, n2], [argTerm1, argTerm2, rtnTerm']) -> return $ PExists2 n1 n2 RTInt $ PConj (PConj (genPred argTerm1) $ genPred argTerm2) $ genRtnPred' rtnTerm'
-                                         _ -> error "not support"
+                                         _ -> error $ "not support args: " ++ show argNames ++ " and terms: " ++ show terms
                                        where rtnName = last predNames
                                              rtnTerm = convertProg' instruction
                                              genRtnPred' :: Term -> Z3Pred
@@ -113,7 +112,7 @@ convertProg expr scope = case expr of
                                -- (¬ ⊥) always satisfied
                                _ -> return PFalse
                            EProgram (instruction:_) -> convertProg instruction scope
-                           _ -> error "not support"
+                           _ -> error $ "not support expr: " ++ show expr
 
 checkPre :: Z3Pred -> Z3SMT () (Result, Maybe Model)
 checkPre pre = local $ do

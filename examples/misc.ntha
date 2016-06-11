@@ -185,5 +185,11 @@
 (asserteq (id' 3) 3)
 (asserteq (id' true) true)
 
-(foo1 : (x : Z | (> x 5)) → (z : Z | (> z 0)))
-(ƒ foo1 [x] (- x 5))
+(foo : (x : Z | (> x 5)) → (z : Z | (> z 0)))
+(ƒ foo [x] (- x 5))
+
+(add : (x : Z | (≥ x 3)) → (y : Z | (≥ y 3)) → (z : Z | (≥ z 6)))
+(ƒ add [x y] (+ x y))
+
+(max : Z → Z → (z : Z | (∧ (≥ z x) (≥ z y))))
+(ƒ max [x y] (if (≤ x y) y x))
