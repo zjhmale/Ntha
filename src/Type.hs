@@ -26,7 +26,7 @@ data Type = TVar Id (IORef TInstance) TName -- type variable
           | TRecord (M.Map TField Type)
           | TCon TName Types Type
           | TSig Type
-          | TRefined String Type Z3Pred
+          | TRefined String Type Term
 
 -- extract normal type from refined type for type inference
 extractType :: Type -> Type
@@ -36,11 +36,17 @@ extractType t = case t of
                   TRefined _ t' _ -> t'
                   _ -> t
 
-extractPred :: Type -> [Z3Pred]
-extractPred t = case t of
-                  TOper "→" args -> args >>= extractPred
-                  TRefined _ _ p -> [p]
+extractTerm :: Type -> [Term]
+extractTerm t = case t of
+                  TOper "→" args -> args >>= extractTerm
+                  TRefined _ _ tm -> [tm]
                   _ -> []
+
+getPredNames :: Type -> [String]
+getPredNames t = case t of
+                   TOper "→" args -> args >>= getPredNames
+                   TRefined n _ _ -> [n]
+                   _ -> []
 
 intT :: Type
 intT = TOper "Number" []
@@ -161,8 +167,7 @@ instance Eq Type where
   TRecord pairs1 == TRecord pairs2 = pairs1 == pairs2
   TCon name1 types1 dataType1 == TCon name2 types2 dataType2 = name1 == name2 && types1 == types2 && dataType1 == dataType2
   TSig t1 == TSig t2 = t1 == t2
-  -- No instance for (Eq Z3Pred)
-  TRefined x1 t1 _ == TRefined x2 t2 _ = x1 == x2 && t1 == t2
+  TRefined x1 t1 tm1 == TRefined x2 t2 tm2 = x1 == x2 && t1 == t2 && tm1 == tm2
   _ == _ = False
 
 instance Ord Type where
@@ -173,8 +178,7 @@ instance Ord Type where
     TRecord pairs1 <= TRecord pairs2 = pairs1 <= pairs2
     TCon name1 types1 dataType1 <= TCon name2 types2 dataType2 = name1 <= name2 && types1 <= types2 && dataType1 <= dataType2
     TSig t1 <= TSig t2 = t1 <= t2
-    -- No instance for (Ord Z3Pred)
-    TRefined x1 t1 _ <= TRefined x2 t2 _ = x1 <= x2 && t1 <= t2
+    TRefined x1 t1 tm1 <= TRefined x2 t2 tm2 = x1 <= x2 && t1 <= t2 && tm1 <= tm2
     _ <= _ = False
 
 makeVariable :: Infer Type

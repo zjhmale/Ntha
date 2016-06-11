@@ -7,68 +7,72 @@ import Z3.Logic
 import Z3.Assertion
 import Prelude hiding (lookup)
 
-convertSig' :: Expr -> Term
-convertSig' expr = case expr of
-                     ENum n -> TmNum n
-                     EVar name -> TmVar name
-                     _ -> error "not support"
+genPred :: Term -> Z3Pred
+genPred term = case term of
+                 TmLT t1 t2 -> PAssert $ Less t1 t2
+                 TmGT t1 t2 -> PAssert $ Greater t1 t2
+                 TmLE t1 t2 -> PAssert $ LessE t1 t2
+                 TmGE t1 t2 -> PAssert $ GreaterE t1 t2
+                 TmEqual t1 t2 -> PAssert $ Equal t1 t2
+                 TmAnd t1 t2 -> PConj (genPred t1) (genPred t2)
+                 TmOr t1 t2 -> PDisj (genPred t1) (genPred t2)
+                 TmNot t -> PNeg (genPred t)
+                 _ -> error "not support"
 
-convertSig :: Expr -> Z3Pred
-convertSig expr = case expr of
-                    EApp fn arg -> case fn of
-                                    EApp (EVar op) arg' -> case op of
-                                                            "<" -> PAssert $ Less argTerm1' argTerm2'
-                                                            ">" -> PAssert $ Greater argTerm1' argTerm2'
-                                                            "≤" -> PAssert $ LessE argTerm1' argTerm2'
-                                                            "≥" -> PAssert $ GreaterE argTerm1' argTerm2'
-                                                            "=" -> PAssert $ Equal argTerm1' argTerm2'
-                                                            "∧" -> PConj argTerm1 argTerm2
-                                                            "∨" -> PDisj argTerm1 argTerm2
-                                                            _ -> error "not support"
-                                      where argTerm1' = convertSig' arg'
-                                            argTerm2' = convertSig' arg
-                                            argTerm1 = convertSig arg'
-                                            argTerm2 = convertSig arg
-                                    EVar op -> case op of
-                                                "¬" -> PNeg argTerm
-                                                _ -> error "not support"
-                                      where argTerm = convertSig arg
-                                    _ -> error "not support"
-                    _ -> error "not support"
+replaceRtnTerm :: String -> Term -> Term -> Term
+replaceRtnTerm rtnName rtnTerm predTerm = case predTerm of
+                                         TmVar n -> if n == rtnName then rtnTerm else predTerm
+                                         TmNum _ -> predTerm
+                                         TmLT t1 t2 -> TmLT (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmGT t1 t2 -> TmGT (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmLE t1 t2 -> TmLE (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmGE t1 t2 -> TmGE (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmSub t1 t2 -> TmSub (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmAdd t1 t2 -> TmAdd (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmMul t1 t2 -> TmMul (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmDiv t1 t2 -> TmDiv (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmEqual t1 t2 -> TmEqual (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmAnd t1 t2 -> TmAnd (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmOr t1 t2 -> TmOr (replaceRtnTerm' t1) (replaceRtnTerm' t2)
+                                         TmNot t -> TmNot (replaceRtnTerm' t)
+                                         TmIf t1 t2 t3 -> TmIf (replaceRtnTerm' t1) (replaceRtnTerm' t2) (replaceRtnTerm' t3)
+  where replaceRtnTerm' = replaceRtnTerm rtnName rtnTerm
 
-convertProg' :: Expr -> IO Term
+genRtnPred :: String -> Term -> Term -> Z3Pred
+-- use neg to find counterexamples
+genRtnPred rtnName rtnTerm = PNeg . genPred . (replaceRtnTerm rtnName rtnTerm)
+
+convertProg' :: Expr -> Term
 convertProg' expr = case expr of
-                      ENum n -> return $ TmNum n
-                      EVar name -> return $ TmVar name
+                      ENum n -> TmNum n
+                      EVar name -> TmVar name
                       EApp fn arg -> case fn of
-                                      EApp (EVar op) arg' -> do
-                                        argTerm' <- convertProg' arg'
-                                        argTerm <- convertProg' arg
-                                        let opConstruct = case op of
-                                                            "+" -> TmAdd
-                                                            "-" -> TmSub
-                                                            "*" -> TmMul
-                                                            "/" -> TmDiv
-                                                            "<" -> TmLT
-                                                            ">" -> TmGT
-                                                            "≤" -> TmLE
-                                                            "≥" -> TmGE
-                                                            "=" -> TmEqual
-                                                            "∧" -> TmAdd
-                                                            "∨" -> TmOr
-                                                            _ -> error "not support"
-                                        return $ opConstruct argTerm' argTerm
-                                      EVar op -> do
-                                        argTerm <- convertProg' arg
-                                        case op of
-                                          "¬" -> return $ TmNot argTerm
-                                          _ -> error "not support"
+                                      EApp (EVar op) arg' -> opConstruct argTerm' argTerm
+                                        where argTerm' = convertProg' arg'
+                                              argTerm = convertProg' arg
+                                              opConstruct = case op of
+                                                              "+" -> TmAdd
+                                                              "-" -> TmSub
+                                                              "*" -> TmMul
+                                                              "/" -> TmDiv
+                                                              "<" -> TmLT
+                                                              ">" -> TmGT
+                                                              "≤" -> TmLE
+                                                              "≥" -> TmGE
+                                                              "=" -> TmEqual
+                                                              "∧" -> TmAdd
+                                                              "∨" -> TmOr
+                                                              _ -> error "not support"
+                                      EVar op -> case op of
+                                                  "¬" -> let argTerm = convertProg' arg
+                                                        in TmNot argTerm
+                                                  _ -> error "not support"
                                       _ -> error "not support"
-                      EIf cond (thenInstruction:[]) (elseInstruction:[]) -> do
-                        condTerm <- convertProg' cond
-                        thenTerm <- convertProg' thenInstruction
-                        elseTerm <- convertProg' elseInstruction
-                        return $ TmIf condTerm thenTerm elseTerm
+                      EIf cond (thenInstruction:[]) (elseInstruction:[]) -> TmIf condTerm thenTerm elseTerm
+                        where condTerm = convertProg' cond
+                              thenTerm = convertProg' thenInstruction
+                              elseTerm = convertProg' elseInstruction
+                      _ -> error "not support"
 
 convertProg :: Expr -> TypeScope -> IO Z3Pred
 convertProg expr scope = case expr of
@@ -82,16 +86,22 @@ convertProg expr scope = case expr of
                                                           IdPattern n -> n
                                                           _ -> error "not support")
                                                 args
-                             instrTerm <- convertProg instruction scope
+                             let rtnTerm = convertProg' instruction
                              case typeSig of
                                Just (TSig ta) -> do
-                                 let preds = extractPred ta
-                                 case (argNames, preds) of
-                                   ([n], [rtnPred]) -> return $ PExists n RTInt $ PNeg rtnPred
-                                   ([n1, n2], [rtnPred]) -> return $ PExists2 n1 n2 RTInt $ PNeg rtnPred
-                                   ([n], [argPred, rtnPred]) -> return $ PExists n RTInt $ PConj argPred $ PNeg rtnPred
-                                   ([n1, n2], [argPred1, argPred2, rtnPred]) -> return $ PExists2 n1 n2 RTInt $ PConj (PConj argPred1 argPred2) $ PNeg rtnPred
-                                   _ -> error "not support"
+                                 let terms = extractTerm ta
+                                 let predNames = getPredNames ta
+                                 case predNames of
+                                   [] -> return PTrue
+                                   _ -> case (argNames, terms) of
+                                         ([n], [rtnTerm']) -> return $ PExists n RTInt $ genRtnPred' rtnTerm'
+                                         ([n1, n2], [rtnTerm']) -> return $ PExists2 n1 n2 RTInt $ genRtnPred' rtnTerm'
+                                         ([n], [argTerm, rtnTerm']) -> return $ PExists n RTInt $ PConj (genPred argTerm) $ genRtnPred' rtnTerm'
+                                         ([n1, n2], [argTerm1, argTerm2, rtnTerm']) -> return $ PExists2 n1 n2 RTInt $ PConj (PConj (genPred argTerm1) $ genPred argTerm2) $ genRtnPred' rtnTerm'
+                                         _ -> error "not support"
+                                       where rtnName = last predNames
+                                             genRtnPred' :: Term -> Z3Pred
+                                             genRtnPred' = genRtnPred rtnName rtnTerm
                                -- always satisfied
                                _ -> return PTrue
                            _ -> error "not support"
