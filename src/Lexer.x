@@ -10,7 +10,7 @@ $upper = [A-Z]
 $lower = [a-z]
 $greek = [α-ω]
 $digit = [0-9]
-$operator = [\+\-\*\/\%\=\>\<\∧\∨\¬\?\'\~\!]
+$operator = [\+\-\*\/\%\=\>\<\∧\∨\¬\?\'\~\!\.]
 $chars = [$lower $upper $digit $operator $greek]
 $eol = [\n]
 
@@ -51,6 +51,7 @@ tokens :-
        "C"                         { \_ -> CHART }
        "S"                         { \_ -> STRT }
        "×"                         { \_ -> PRODUCT }
+       "import"                    { \_ -> IMPORT }
        "true" | "false"            { \s -> BOOLEAN (read ([toUpper (s!!0)] ++ tail s)) }
        $upper $chars*              { \s -> CON s }
        $lower $chars*              { \s -> VAR s }
@@ -96,6 +97,7 @@ data Token = DATA
            | CHART
            | STRT
            | PRODUCT
+           | IMPORT
            | KEYWORD String
            | OPERATOR String
            | BOOLEAN Bool

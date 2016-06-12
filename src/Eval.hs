@@ -225,3 +225,4 @@ eval expr scope = case expr of
                     ETypeSig _ _ -> (scope, VUnit)
                     EProgram instrs -> foldl (\(env, val) instr -> val `seq` eval instr env)
                                             (child scope, VUnit) instrs
+                    _ -> error $ "not support eval expr: " ++ show expr

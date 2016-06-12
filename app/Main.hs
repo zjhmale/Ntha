@@ -1,5 +1,6 @@
 module Main where
 
+import Ast (EPath)
 import Eval (eval)
 import Infer (analyze)
 import Refined (checker)
@@ -21,15 +22,18 @@ type Env = (TypeScope, ValueScope)
 emptyEnv :: (TypeScope, ValueScope)
 emptyEnv = (TypeScope Nothing M.empty, ValueScope Nothing M.empty)
 
-loadlib :: IO Env
-loadlib = do
+loadFile :: EPath -> IO Env
+loadFile path = do
   assumps <- assumptions
-  std <- readFile "./lib/std.ntha"
+  std <- readFile path
   let stdast = parseExpr std
   (stdassumps, _) <- analyze stdast assumps S.empty
   checker stdast stdassumps
   let (stdbuiltins, _) = eval stdast builtins
   return (stdassumps, stdbuiltins)
+
+loadLib :: IO Env
+loadLib = loadFile "./lib/std.ntha"
 
 process :: Env -> String -> IO Env
 process (assumps, prevBuiltins) expr = E.catch (do
@@ -64,7 +68,7 @@ prologueMessage = intercalate "\n"
 
 main :: IO Env
 main = do
-  env <- loadlib
+  env <- loadLib
   args <- getArgs
   case (args ^? element 0) of
     Just arg -> if arg == "repl"

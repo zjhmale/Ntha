@@ -7,6 +7,7 @@ import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 
 type EName = String -- variable name
+type EPath = String
 type EField = String
 type EIndent = Int
 type TypeVariable = Type -- just for documentation
@@ -29,6 +30,7 @@ data Expr = EVar EName
           | EDestructLetBinding Pattern [Pattern] [Expr]
           | EDataDecl EName Type [TypeVariable] [TypeConstructor]
           | ETypeSig EName Type -- explicit type annotation
+          | EImport EPath
           | EProgram [Expr]
           deriving (Eq, Ord)
 
@@ -145,6 +147,7 @@ reprOfExpr i e = case e of
                   EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
                   ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
                   ETypeSig name t -> tab i ++ "(" ++ name ++ " : " ++ show t ++ ")"
+                  EImport path -> "import " ++ path
                   EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
 
 instance Show Expr where

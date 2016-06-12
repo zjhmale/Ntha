@@ -122,11 +122,11 @@ checkPre pre = local $ do
 checker :: Expr -> TypeScope -> IO ()
 checker expr scope = case expr of
                        EDestructLetBinding _ _ _ -> do
-                         pred <- convertProg expr scope
+                         progPred <- convertProg expr scope
                          -- trade off
                          let adts = [("", [("", [("", RTInt)])])]
                          ret <- runSMT adts () $ do
-                                  (r, _mm) <- checkPre pred
+                                  (r, _mm) <- checkPre progPred
                                   case r of
                                       Unsat -> do
                                           core <- getUnsatCore

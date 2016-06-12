@@ -155,7 +155,7 @@ definePattern pattern t scope = do
     _ -> return scope
 
 analyze :: Expr -> TypeScope -> NonGeneric -> Infer (TypeScope, Type)
-analyze term scope nonGeneric = case term of
+analyze expr scope nonGeneric = case expr of
                                   ENum _ -> return (scope, intT)
                                   EBool _ -> return (scope, boolT)
                                   EChar _ -> return (scope, charT)
@@ -263,3 +263,4 @@ analyze term scope nonGeneric = case term of
                                     return (scope, resT')
                                   ETypeSig name t -> return (insert (name ++ "-sig") (TSig t) scope, unitT)
                                   EProgram instructions -> foldM (\(env, _) instr -> analyze instr env nonGeneric) (scope, unitT) instructions
+                                  _ -> error $ "not support infer expr: " ++ show expr

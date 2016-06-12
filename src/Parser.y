@@ -46,6 +46,7 @@ import System.IO.Unsafe (unsafePerformIO)
     '::'     { DOUBLECOLON }
     '|'      { BAR }
     let      { LET }
+    import   { IMPORT }
     TNumber  { NUMBERT }
     TBool    { BOOLT }
     TChar    { CHART }
@@ -93,6 +94,7 @@ Expr : '(' defun VAR '[' Args ']' FormsPlus ')'            { EDestructLetBinding
                                                               $4 `seq` modifyIORef monadMap $ M.insert $3 $4
                                                               return $ EDestructLetBinding (IdPattern $3) [] [$4] }
      | '(' VAR ':' Type ')'                                { ETypeSig $2 $4 }
+     | '(' import VAR ')'                                  { EImport (getPathStr $3) }
      | Form                                                { $1 }
 
 -- TODO should support arg parameter such as (Maybe N      umber)
@@ -294,6 +296,11 @@ tvarMap = unsafePerformIO $ do
           tvar <- makeVariable
           return $ M.insert greek tvar m)
         M.empty ['α'..'ω']
+
+getPathStr :: EPath -> EPath
+getPathStr s = (map f s) ++ ".ntha"
+  where f '.' = '/'
+        f c = c
 
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
