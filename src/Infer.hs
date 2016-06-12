@@ -169,8 +169,8 @@ analyze expr scope nonGeneric = case expr of
                                                   unify valueT eT)
                                     return (scope, listT valueT)
                                   ETuple exprs -> do
-                                    types <- foldM (\types expr -> do
-                                                      (_, ty) <- analyze expr scope nonGeneric
+                                    types <- foldM (\types expr' -> do
+                                                      (_, ty) <- analyze expr' scope nonGeneric
                                                       return $ types ++ [ty])
                                                    [] exprs
                                     return (scope, productT types)

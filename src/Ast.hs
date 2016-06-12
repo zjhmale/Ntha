@@ -34,6 +34,11 @@ data Expr = EVar EName
           | EProgram [Expr]
           deriving (Eq, Ord)
 
+isImport :: Expr -> Bool
+isImport expr = case expr of
+  EImport _ -> True
+  _ -> False
+
 -- for do block desuger to bind
 data Bind = Bind EName Expr
           | Return Expr

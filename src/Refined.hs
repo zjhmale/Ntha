@@ -6,7 +6,6 @@ import TypeScope
 import Z3.Class
 import Z3.Logic
 import Z3.Context
-import Z3.Encoding
 import Z3.Assertion
 import Z3.Monad
 import Prelude hiding (lookup)

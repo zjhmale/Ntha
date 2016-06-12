@@ -1,14 +1,16 @@
 module Main where
 
-import Ast (EPath)
+import Ast (Expr(..), EPath, isImport)
+import Type (Type(..))
 import Eval (eval)
 import Infer (analyze)
 import Refined (checker)
 import Parser (parseExpr)
-import Value (ValueScope(..))
+import Value (ValueScope(..), Value(..))
 import TypeScope (TypeScope(..))
 import Prologue (assumptions, builtins)
 import Control.Lens
+import Control.Monad (foldM)
 import Control.Monad.Trans
 import System.Environment
 import System.Console.Haskeline
@@ -22,30 +24,43 @@ type Env = (TypeScope, ValueScope)
 emptyEnv :: (TypeScope, ValueScope)
 emptyEnv = (TypeScope Nothing M.empty, ValueScope Nothing M.empty)
 
-loadFile :: EPath -> IO Env
-loadFile path = do
-  assumps <- assumptions
-  std <- readFile path
-  let stdast = parseExpr std
-  (stdassumps, _) <- analyze stdast assumps S.empty
-  checker stdast stdassumps
-  let (stdbuiltins, _) = eval stdast builtins
-  return (stdassumps, stdbuiltins)
+loadFile :: Env -> EPath -> IO Env
+loadFile env path = do
+  fileContent <- readFile path
+  (env', _, _) <- process' env $ parseExpr fileContent
+  return env'
+
+loadImport :: Env -> Expr -> IO (Env, Expr)
+loadImport env expr = case expr of
+  EProgram instructions -> do
+    let imports = filter isImport instructions
+    let continueAst = EProgram $ filter (not . isImport) instructions
+    importEnv <- foldM (\env (EImport path) -> loadFile env path) env imports
+    return (importEnv, continueAst)
+  _ -> return (env, expr)
 
 loadLib :: IO Env
-loadLib = loadFile "./lib/std.ntha"
+loadLib = do
+  assumps <- assumptions
+  loadFile (assumps, builtins) "./lib/std.ntha"
+
+process' :: Env -> Expr -> IO (Env, Value, Type)
+process' env expr = do
+   ((importAssumps, importBuiltins), ast) <- loadImport env expr
+   (assumps', t) <- analyze ast importAssumps S.empty
+   checker ast assumps'
+   let (builtins', v) = eval ast importBuiltins
+   return ((assumps', builtins'), v, t)
 
 process :: Env -> String -> IO Env
-process (assumps, prevBuiltins) expr = E.catch (do
-                                            let ast = parseExpr expr
-                                            (assumps', t) <- analyze ast assumps S.empty
-                                            checker ast assumps'
-                                            let (builtins', v) = eval ast prevBuiltins
-                                            putStrLn $ show v ++ " : " ++ show t
-                                            return (assumps', builtins'))
-                                           (\(E.ErrorCall e) -> do
-                                            putStrLn e
-                                            return (assumps, prevBuiltins))
+process env@(assumps, prevBuiltins) expr =
+  E.catch (do
+           (env', v, t) <- process' env $ parseExpr expr
+           putStrLn $ show v ++ " : " ++ show t
+           return env')
+          (\(E.ErrorCall e) -> do
+           putStrLn e
+           return (assumps, prevBuiltins))
 
 loop :: Env -> InputT IO Env
 loop env = do
