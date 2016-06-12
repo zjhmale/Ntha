@@ -1,0 +1,13 @@
+(import examples.misc)
+
+(let f5 (fact 5))
+(asserteq f5 120)
+(print (int2str f5))
+
+(let fw5 (fact-wrap 5))
+(asserteq fw5 120)
+(print (int2str fw5))
+
+(let fc5 (factc 5))
+(asserteq fc5 120)
+(print (int2str fc5))
