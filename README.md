@@ -34,7 +34,7 @@ a tiny statically typed functional programming language.
 * JIT backend.
 * Type-classes (desuger to Records).
 * Rank-N types ([a naive implementation of First-Class Polymorphism](https://github.com/zjhmale/HMF/tree/master/src/FCP)).
-* Dependent types.
+* λπ
 * Fully type checked lisp like macros (comply with the internal design of Template Haskell).
 * TCO.
 

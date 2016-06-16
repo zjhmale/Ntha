@@ -87,12 +87,12 @@ main = do
   args <- getArgs
   case (args ^? element 0) of
     Just arg -> if arg == "repl"
-               then do
-                putStrLn prologueMessage
-                runInputT defaultSettings (loop env)
-               else do
-                file <- readFile arg
-                process env file
+                then do
+                  putStrLn prologueMessage
+                  runInputT defaultSettings (loop env)
+                else do
+                  file <- readFile arg
+                  process env file
     Nothing -> do
       input <- getContents
       process env input
