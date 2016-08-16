@@ -11,7 +11,8 @@ before_install:
   - export PATH=~/.local/bin:$PATH
   - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar -xzO --wildcards '*/stack' > ~/.local/bin/stack
   - chmod a+x ~/.local/bin/stack
-  - git submodule update
+  # FIXME since upstream of Z3-encoding updated and refactored, need to catch up later.
+  # - git submodule update
 
 matrix:
   include:
@@ -23,12 +24,14 @@ install:
   - stack -j 2 build --only-snapshot --no-terminal
 
 script:
-  - git clone git://github.com/Z3Prover/z3.git extern/z3
-  - cd extern/z3
+  - wget https://github.com/Z3Prover/z3/archive/z3-4.4.1.zip
+  - unzip z3-4.4.1.zip
+  - cd z3-z3-4.4.1
   - python scripts/mk_make.py  --prefix=`pwd`/install
   - cd build
   - make
   - make install
   - cd ../install/lib
   - export LD_LIBRARY_PATH=`pwd`
-  - stack clean && stack test --extra-include-dirs $TRAVIS_BUILD_DIR/extern/z3/install/include --extra-lib-dirs $TRAVIS_BUILD_DIR/extern/z3/install/lib
+  - stack clean && stack test --extra-include-dirs $TRAVIS_BUILD_DIR/z3-z3-4.4.1/install/include --extra-lib-dirs $TRAVIS_BUILD_DIR/z3-z3-4.4.1/install/lib
+
