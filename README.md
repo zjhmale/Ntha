@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/zjhmale/Ntha.svg?branch=master)](https://travis-ci.org/zjhmale/Ntha)
 [![zjhmale](https://img.shields.io/badge/author-%40zjhmale-blue.svg)](https://github.com/zjhmale)
 [![Haskell](https://img.shields.io/badge/language-haskell-red.svg)](https://en.wikipedia.org/wiki/Haskell_(programming_language))
+[![Hackage](https://img.shields.io/hackage/v/ntha.svg)](https://hackage.haskell.org/package/ntha)
+[![Hackage-Deps](https://img.shields.io/hackage-deps/v/idrigen.svg)](https://hackage.haskell.org/package/ntha)
 
 a tiny statically typed functional programming language.
 

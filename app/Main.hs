@@ -1,5 +1,6 @@
 module Main where
 
+import Paths_ntha
 import Ast (Expr(..), EPath, isImport)
 import Type (Type(..))
 import Eval (eval)
@@ -26,7 +27,8 @@ emptyEnv = (TypeScope Nothing M.empty, ValueScope Nothing M.empty)
 
 loadFile :: Env -> EPath -> IO Env
 loadFile env path = do
-  fileContent <- readFile path
+  file <- getDataFileName path
+  fileContent <- readFile file
   (env', _, _) <- process' env $ parseExpr fileContent
   return env'
 
@@ -42,7 +44,7 @@ loadImport env expr = case expr of
 loadLib :: IO Env
 loadLib = do
   assumps <- assumptions
-  loadFile (assumps, builtins) "./lib/std.ntha"
+  loadFile (assumps, builtins) "lib/std.ntha"
 
 process' :: Env -> Expr -> IO (Env, Value, Type)
 process' env expr = do
