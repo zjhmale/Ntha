@@ -37,7 +37,7 @@ loadImport env expr = case expr of
   EProgram instructions -> do
     let imports = filter isImport instructions
     let continueAst = EProgram $ filter (not . isImport) instructions
-    importEnv <- foldM (\env (EImport path) -> loadFile env path) env imports
+    importEnv <- foldM (\ev (EImport path) -> loadFile ev path) env imports
     return (importEnv, continueAst)
   _ -> return (env, expr)
 

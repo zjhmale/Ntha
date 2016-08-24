@@ -8,6 +8,11 @@
 
 a tiny statically typed functional programming language.
 
+## Installation
+
+* brew install z3
+* cabal install ntha
+
 ## Features
 
 * Global type inference with optional type annotations.
