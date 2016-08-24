@@ -1,7 +1,7 @@
 name:                ntha
-version:             0.3.0
-synopsis:            a tiny statically typed functional programming language with global type inference and JIT compiler
-description:         Please see README.md
+version:             0.1.0
+synopsis:            A tiny statically typed functional programming language with global type inference and JIT compiler
+description:         Check out <https://github.com/zjhmale/Ntha#readme the readme> for documentation.
 homepage:            https://github.com/zjhmale/ntha
 license:             BSD3
 license-file:        LICENSE
@@ -11,6 +11,11 @@ copyright:           2016 zjhmale
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
+extra-source-files:
+    README.md
+data-files:
+    lib/std.ntha
+
 
 library
   hs-source-dirs:      src
@@ -39,7 +44,7 @@ library
   default-language:    Haskell2010
   ghc-options:         -Wall
 
-executable ntha-exe
+executable ntha
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
