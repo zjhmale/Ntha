@@ -1,5 +1,5 @@
 name:                ntha
-version:             0.1.1
+version:             0.1.3
 synopsis:            A tiny statically typed functional programming language.
 description:         Check out <https://github.com/zjhmale/Ntha#readme the readme> for documentation.
 homepage:            https://github.com/zjhmale/ntha

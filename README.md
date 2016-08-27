@@ -22,7 +22,7 @@ a tiny statically typed functional programming language.
 * Support destructuring.
 * ADTs and pattern matching.
 * Haskell like type signature for type checking.
-* Refined types (still in early stage, just support basic arithmetic operations and propositinal logic, [here is some examples](https://github.com/zjhmale/Ntha/blob/master/examples/misc.ntha#L188-L195)).
+* Refined types (still in early stage, just support basic arithmetic operations and propositinal logic, [here is some examples](https://github.com/zjhmale/Ntha/blob/master/examples/misc.ntha#L188-L195)), based on [z3-encoding](https://github.com/izgzhen/z3-encoding/tree/1d794c10db716ac9308e49bf4f5a115e14212f31)
 * Module system (still in early stage, lack of namespace control).
 * Support pattern matching on function parameters.
 * Lambdas and curried function by default.
