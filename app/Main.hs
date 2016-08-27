@@ -1,15 +1,20 @@
 module Main where
 
 import Paths_ntha
-import Ast (Expr(..), EPath, isImport)
-import Type (Type(..))
-import Eval (eval)
-import Infer (analyze)
-import Refined (checker)
-import Parser (parseExpr)
-import Value (ValueScope(..), Value(..))
-import TypeScope (TypeScope(..))
-import Prologue (assumptions, builtins)
+import Ntha(
+  Expr(..),
+  Type(..),
+  ValueScope(..),
+  Value(..),
+  TypeScope(..),
+  EPath,
+  isImport,
+  eval,
+  analyze,
+  checker,
+  parseExpr,
+  assumptions,
+  builtins)
 import Control.Lens
 import Control.Monad (foldM)
 import Control.Monad.Trans

@@ -1,7 +1,7 @@
-module TypeScope where
+module Ntha.Type.TypeScope where
 
-import Ast
-import Type
+import Ntha.Core.Ast
+import Ntha.Type.Type
 import Prelude hiding (lookup)
 import qualified Data.Map as M
 

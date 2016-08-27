@@ -2,11 +2,11 @@
 
 -- | A concrete context implement SMT provided *for convenience*
 
-module Z3.Context (Z3SMT) where
+module Ntha.Z3.Context (Z3SMT) where
 
+import Ntha.Z3.Class
+import Ntha.Z3.Encoding
 import Z3.Monad
-import Z3.Class
-import Z3.Encoding
 
 import Control.Monad.State
 import Control.Monad.Except

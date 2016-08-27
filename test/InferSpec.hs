@@ -1,11 +1,11 @@
 module InferSpec where
 
-import Ast
-import Type
-import Infer
-import State (resetId, resetUniqueName)
+import Ntha.Core.Ast
+import Ntha.Type.Type
+import Ntha.Type.Infer
+import Ntha.Core.Prologue
+import Ntha.State (resetId, resetUniqueName)
 import Control.Monad (foldM)
-import Prologue
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 import qualified Data.Set as S

@@ -1,11 +1,11 @@
 {
-module Parser where
+module Ntha.Parser.Parser where
 
-import Ast
-import Type
-import Refined (convertProg')
-import Lexer
-import State
+import Ntha.State
+import Ntha.Core.Ast
+import Ntha.Type.Type
+import Ntha.Type.Refined (convertProg')
+import Ntha.Parser.Lexer
 import Control.Monad
 import Data.List
 import Data.IORef

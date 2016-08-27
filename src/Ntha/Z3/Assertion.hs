@@ -3,10 +3,10 @@
 -- It is not hard-coded into Z3.Logic.Pred
 --
 
-module Z3.Assertion (Assertion(..)) where
+module Ntha.Z3.Assertion (Assertion(..)) where
 
-import Z3.Class
-import Z3.Encoding()
+import Ntha.Z3.Class
+import Ntha.Z3.Encoding()
 import Z3.Monad
 
 import qualified Data.Map as M

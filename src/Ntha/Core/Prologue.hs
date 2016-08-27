@@ -1,10 +1,10 @@
-module Prologue where
+module Ntha.Core.Prologue where
 
-import Ast
-import Type
-import Value
-import State
-import TypeScope
+import Ntha.State
+import Ntha.Core.Ast
+import Ntha.Runtime.Value
+import Ntha.Type.Type
+import Ntha.Type.TypeScope
 import Debug.Trace
 import qualified Data.Map as M
 

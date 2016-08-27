@@ -1,6 +1,6 @@
 {
-module Lexer where
-import Ast (EName)
+module Ntha.Parser.Lexer where
+import Ntha.Core.Ast (EName)
 import Data.Char (toUpper)
 }
 

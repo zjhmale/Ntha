@@ -1,4 +1,4 @@
-module State where
+module Ntha.State where
 
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)

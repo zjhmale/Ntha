@@ -1,7 +1,7 @@
-module Eval where
+module Ntha.Runtime.Eval where
 
-import Ast
-import Value
+import Ntha.Core.Ast
+import Ntha.Runtime.Value
 import Data.Maybe (fromMaybe)
 import Prelude hiding (lookup)
 import qualified Data.Map as M

@@ -1,9 +1,9 @@
-module Infer where
+module Ntha.Type.Infer where
 
-import Ast
-import Type
-import TypeScope
-import State
+import Ntha.State
+import Ntha.Core.Ast
+import Ntha.Type.Type
+import Ntha.Type.TypeScope
 import Data.IORef
 import Control.Monad (when, zipWithM_, foldM, forM_)
 import Control.Monad.Loops (anyM)

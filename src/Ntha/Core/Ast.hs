@@ -1,6 +1,6 @@
-module Ast where
+module Ntha.Core.Ast where
 
-import Type
+import Ntha.Type.Type
 import Data.Maybe (fromMaybe)
 import Data.List (intercalate)
 import qualified Data.Map as M

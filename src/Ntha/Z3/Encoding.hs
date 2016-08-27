@@ -2,7 +2,7 @@
 -- Prviding some Z3 encoding for certain language constructs
 -- Require a Class.SMT context to work
 
-module Z3.Encoding (
+module Ntha.Z3.Encoding (
   -- ** Heterogenous list, a hack to encode different "term" into a list
   -- Used to encode function argument list
   HeteroList(..),
@@ -12,7 +12,7 @@ module Z3.Encoding (
   encodeDataType
 ) where
 
-import Z3.Class
+import Ntha.Z3.Class
 import Z3.Monad hiding (mkMap, App)
 
 data HeteroList where

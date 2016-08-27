@@ -1,8 +1,8 @@
 module ParserSpec where
 
-import Ast
-import Type
-import Parser
+import Ntha.Core.Ast
+import Ntha.Type.Type
+import Ntha.Parser.Parser
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 import Test.Hspec

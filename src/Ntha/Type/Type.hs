@@ -1,14 +1,14 @@
-module Type where
+module Ntha.Type.Type where
 
-import State
+import Ntha.State
+import Ntha.Z3.Class
+import Ntha.Z3.Logic
+import Ntha.Z3.Assertion
+import Z3.Monad
 import Data.IORef
 import Data.List (intercalate)
-import Control.Monad (foldM, liftM)
 import Data.Maybe (fromMaybe)
-import Z3.Class
-import Z3.Logic
-import Z3.Assertion
-import Z3.Monad
+import Control.Monad (foldM, liftM)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Text.PrettyPrint as PP

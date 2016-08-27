@@ -1,10 +1,10 @@
 module EvalSpec where
 
-import Ast
-import Type
-import Value
-import Eval
-import Prologue
+import Ntha.Core.Ast
+import Ntha.Runtime.Value
+import Ntha.Type.Type
+import Ntha.Runtime.Eval
+import Ntha.Core.Prologue
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 import Test.Hspec

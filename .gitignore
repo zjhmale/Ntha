@@ -16,4 +16,3 @@ cabal.sandbox.config
 *.hp
 *.eventlog
 .stack-work/
-ntha

@@ -1,6 +1,6 @@
 -- | Predicates
 
-module Z3.Logic (Pred(..)) where
+module Ntha.Z3.Logic (Pred(..)) where
 
 data Pred t ty a where
     PTrue   :: Pred t ty a

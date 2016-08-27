@@ -2,7 +2,7 @@
 -- Type classes and built-in implementation for primitive Haskell types
 -- 
 
-module Z3.Class (
+module Ntha.Z3.Class (
     -- ** Types whose values are encodable to Z3 internal AST
     Z3Encoded(..),
     -- ** Types representable as Z3 Sort
@@ -18,8 +18,8 @@ module Z3.Class (
     SMT(..)
 ) where
 
+import Ntha.Z3.Logic
 import Z3.Monad
-import Z3.Logic
 
 import Control.Monad.Except
 

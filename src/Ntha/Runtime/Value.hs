@@ -1,6 +1,6 @@
-module Value where
+module Ntha.Runtime.Value where
 
-import Ast
+import Ntha.Core.Ast
 import Data.List (intercalate)
 import Prelude hiding (lookup)
 import qualified Data.Map as M

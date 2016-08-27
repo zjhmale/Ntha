@@ -21,22 +21,23 @@ data-files:
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Ast
-                     , Type
-                     , TypeScope
-                     , Value
-                     , State
-                     , Infer
-                     , Eval
-                     , Refined
-                     , Prologue
-                     , Lexer
-                     , Parser
-                     , Z3.Assertion
-                     , Z3.Class
-                     , Z3.Context
-                     , Z3.Encoding
-                     , Z3.Logic
+  exposed-modules:     Ntha.Core.Ast
+                     , Ntha.Core.Prologue
+                     , Ntha.Runtime.Eval
+                     , Ntha.Runtime.Value
+                     , Ntha.Type.Type
+                     , Ntha.Type.TypeScope
+                     , Ntha.Type.Refined
+                     , Ntha.Type.Infer
+                     , Ntha.State
+                     , Ntha.Parser.Lexer
+                     , Ntha.Parser.Parser
+                     , Ntha.Z3.Assertion
+                     , Ntha.Z3.Class
+                     , Ntha.Z3.Context
+                     , Ntha.Z3.Encoding
+                     , Ntha.Z3.Logic
+                     , Ntha
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , pretty
