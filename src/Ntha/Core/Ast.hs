@@ -1,9 +1,10 @@
 module Ntha.Core.Ast where
 
-import Ntha.Type.Type
-import Data.Maybe (fromMaybe)
-import Data.List (intercalate)
-import qualified Data.Map as M
+import           Ntha.Type.Type
+
+import           Data.List        (intercalate)
+import           Data.Maybe       (fromMaybe)
+import qualified Data.Map         as M
 import qualified Text.PrettyPrint as PP
 
 type EName = String -- variable name
@@ -112,14 +113,18 @@ stringofNameds = unwords . (map stringOfNamed)
 
 stringOfExpr :: Expr -> String
 stringOfExpr e = case e of
-                  EApp fn arg -> "<" ++ show fn ++ ">(" ++ show arg ++ ")"
-                  ELambda params annoT body -> "λ" ++ stringofNameds params ++ (case annoT of
-                                                                                Just annoT' -> " : " ++ show annoT'
-                                                                                Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") body)
-                  EIf cond thenInstrs elseInstrs -> "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ "else \n" ++ stringOfInstrs elseInstrs where
-                    stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ show instr ++ "\n") instrs
-                  EProgram instrs -> intercalate "" $ map (\instr -> show instr ++ "\n") instrs
-                  _ -> reprOfExpr 0 e
+  EApp fn arg -> "<" ++ show fn ++ ">(" ++ show arg ++ ")"
+  ELambda params annoT body -> "λ" ++ stringofNameds params ++ b
+    where b = (case annoT of
+                 Just annoT' -> " : " ++ show annoT'
+                 Nothing -> "")
+              ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ show instr ++ "\n") body)
+  EIf cond thenInstrs elseInstrs -> "if " ++ show cond ++ " then \n" ++ th ++ "else \n" ++ el
+    where stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ show instr ++ "\n") instrs
+          th = stringOfInstrs thenInstrs
+          el = stringOfInstrs elseInstrs
+  EProgram instrs -> intercalate "" $ map (\instr -> show instr ++ "\n") instrs
+  _ -> reprOfExpr 0 e
 
 stringOfCase :: EIndent -> Case -> String
 stringOfCase i (Case pat outcomes) = "\n" ++ tab i ++ show pat ++ " ⇒ " ++ show outcomes
@@ -129,31 +134,39 @@ stringOfCases i cases = intercalate "" (map (stringOfCase i) cases)
 
 reprOfExpr :: EIndent -> Expr -> String
 reprOfExpr i e = case e of
-                  EVar n -> tab i ++ n
-                  EAccessor e' f -> tab i ++ reprOfExpr 0 e' ++ "." ++ f
-                  ENum v -> tab i ++ show v
-                  EStr v -> tab i ++ v
-                  EChar v -> tab i ++ [v]
-                  EBool v -> tab i ++ show v
-                  EUnit -> tab i ++ "()"
-                  EList es -> tab i ++ show es
-                  ETuple es -> "(" ++ intercalate "," (map (reprOfExpr 0) es) ++ ")"
-                  ERecord pairs -> "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
-                  EApp _ _ -> tab i ++ show e
-                  ELambda params annoT body -> tab i ++ "λ" ++ stringofNameds params ++ (case annoT of
-                                                                                         Just annoT' -> " : " ++ show annoT'
-                                                                                         Nothing -> "") ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
-                  EIf cond thenInstrs elseInstrs -> tab i ++ "if " ++ show cond ++ " then \n" ++ stringOfInstrs thenInstrs ++ tab i ++ "else \n" ++ stringOfInstrs elseInstrs where
-                    stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
-                  EPatternMatching input cases -> tab i ++ "match " ++ show input ++ stringOfCases i cases
-                  EDataDecl name _ tvars tcons -> tab i ++ "data " ++ name ++ " " ++ unwords (map show tvars) ++ " = " ++ intercalate " | " (map (\(TypeConstructor name' types) -> name' ++ case types of
-                                                                                                                                                                                            [] -> ""
-                                                                                                                                                                                            _ -> " " ++ unwords (map show types)) tcons)
-                  EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
-                  ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
-                  ETypeSig name t -> tab i ++ "(" ++ name ++ " : " ++ show t ++ ")"
-                  EImport path -> "import " ++ path
-                  EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
+  EVar n -> tab i ++ n
+  EAccessor e' f -> tab i ++ reprOfExpr 0 e' ++ "." ++ f
+  ENum v -> tab i ++ show v
+  EStr v -> tab i ++ v
+  EChar v -> tab i ++ [v]
+  EBool v -> tab i ++ show v
+  EUnit -> tab i ++ "()"
+  EList es -> tab i ++ show es
+  ETuple es -> "(" ++ intercalate "," (map (reprOfExpr 0) es) ++ ")"
+  ERecord pairs -> "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ ": " ++ reprOfExpr 0 v) pairs) ++ "}"
+  EApp _ _ -> tab i ++ show e
+  ELambda params annoT body -> tab i ++ "λ" ++ stringofNameds params ++ b
+    where b = (case annoT of
+                 Just annoT' -> " : " ++ show annoT'
+                 Nothing -> "")
+              ++ " = \n" ++ intercalate "" (map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") body)
+  EIf cond thenInstrs elseInstrs -> tab i ++ "if " ++ show cond ++ " then \n" ++ th ++ tab i ++ "else \n" ++ el
+    where stringOfInstrs instrs = intercalate "" $ map (\instr -> "\t" ++ reprOfExpr (i + 1) instr ++ "\n") instrs
+          th = stringOfInstrs thenInstrs
+          el = stringOfInstrs elseInstrs
+  EPatternMatching input cases -> tab i ++ "match " ++ show input ++ stringOfCases i cases
+  EDataDecl name _ tvars tcons -> tab i ++ "data " ++ name ++ " " ++ unwords (map show tvars) ++ " = " ++ cs
+    where scons = (map (\(TypeConstructor name' types) ->
+                          name' ++ case types of
+                                    [] -> ""
+                                    _ -> " " ++ unwords (map show types)) tcons)
+          cs = intercalate " | " scons
+  EDestructLetBinding main args instrs -> tab i ++ "let " ++ show main ++ " " ++ unwords (map show args) ++ " = \n" ++ is
+    where is = intercalate "" (map (\instr -> reprOfExpr (i + 1) instr ++ "\n") instrs)
+  ELetBinding main def body -> tab i ++ "let " ++ show main ++ " " ++ show def ++ " in " ++ intercalate "\n" (map show body)
+  ETypeSig name t -> tab i ++ "(" ++ name ++ " : " ++ show t ++ ")"
+  EImport path -> "import " ++ path
+  EProgram instrs -> intercalate "" $ map (\instr -> reprOfExpr i instr ++ "\n") instrs
 
 instance Show Expr where
     showsPrec _ x = shows $ PP.text $ stringOfExpr x

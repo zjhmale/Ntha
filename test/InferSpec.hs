@@ -3,7 +3,7 @@ module InferSpec where
 import Ntha.Core.Ast
 import Ntha.Type.Type
 import Ntha.Type.Infer
-import Ntha.Core.Prologue
+import Ntha.Core.Prelude
 import Ntha.State (resetId, resetUniqueName)
 import Control.Monad (foldM)
 import qualified Data.Map as M

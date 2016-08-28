@@ -1,9 +1,11 @@
 module Ntha.Runtime.Value where
 
-import Ntha.Core.Ast
-import Data.List (intercalate)
-import Prelude hiding (lookup)
-import qualified Data.Map as M
+import           Ntha.Core.Ast
+import           Prelude       hiding (lookup)
+
+import           Data.List     (intercalate)
+import qualified Data.Map      as M
+
 
 type ValueEnv = M.Map EName Value
 type ParentScope = ValueScope
@@ -36,8 +38,8 @@ child = createScopeWithParent
 
 instance Show ValueScope where
   show (ValueScope parent env) = (show . M.toList) env ++ case parent of
-                                              Just p -> " -> " ++ show p
-                                              Nothing -> " -| "
+    Just p -> " -> " ++ show p
+    Nothing -> " -| "
 
 type Tag = String
 type FreeVal = Value
@@ -65,13 +67,13 @@ cons h t = Adt "Cons" [h, t]
 
 makeList :: [Value] -> Value
 makeList res = case res of
-                [] -> nil
-                x:xs -> cons x $ makeList xs
+  [] -> nil
+  x:xs -> cons x $ makeList xs
 
 getElements :: Value -> [Value]
 getElements l = case l of
-                  Adt "Cons" [h, t] -> h : (getElements t)
-                  _ -> []
+  Adt "Cons" [h, t] -> h : (getElements t)
+  _ -> []
 
 reverseList :: Value -> Value
 reverseList l = makeList . reverse . getElements $ l
@@ -81,8 +83,8 @@ strV s = makeList $ map (VChar) s
 
 desugerStrV :: Value -> String
 desugerStrV (Adt _ values) = case values of
-                               [] -> ""
-                               _ -> intercalate "" (map desugerStrV values)
+  [] -> ""
+  _ -> intercalate "" (map desugerStrV values)
 desugerStrV v = show v
 
 -- binary operator
@@ -91,22 +93,23 @@ binFn f = Fn (\arg1 _ -> Fn (\arg2 _ -> f arg1 arg2))
 
 isString :: Value -> Bool
 isString v = case v of
-               Adt "Cons" [h, _] -> case h of
-                                     VChar _ -> True
-                                     _ -> False
-               _ -> False
+  Adt "Cons" [h, _] -> case h of
+                         VChar _ -> True
+                         _ -> False
+  _ -> False
 
 stringOfAdt :: Tag -> [Value] -> String
 stringOfAdt tag values = case tag of
-                           "Cons" -> case (head values) of
-                                      VChar _ -> "\"" ++ intercalate "" (map show (getElements (Adt tag values))) ++ "\""
-                                      _ -> "[" ++ intercalate ", " (map (\v -> case v of
-                                                                               Adt "Nil" [] -> "[]"
-                                                                               _ -> show v) (getElements (Adt tag values))) ++ "]"
-                           "Nil" -> "[]"
-                           _ -> tag ++ case values of
-                                        []-> ""
-                                        _ -> " " ++ intercalate " | " (map show values)
+  "Cons" ->
+    case (head values) of
+      VChar _ -> "\"" ++ intercalate "" (map show (getElements (Adt tag values))) ++ "\""
+      _ -> "[" ++ intercalate ", " (map (\v -> case v of
+                                         Adt "Nil" [] -> "[]"
+                                         _ -> show v) (getElements (Adt tag values))) ++ "]"
+  "Nil" -> "[]"
+  _ -> tag ++ case values of
+               []-> ""
+               _ -> " " ++ intercalate " | " (map show values)
 
 stringOfPairs :: M.Map String Value -> String
 stringOfPairs pairs = "{" ++ intercalate "," (M.elems $ M.mapWithKey (\f v -> f ++ " : " ++ show v) pairs) ++ "}"

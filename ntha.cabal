@@ -22,7 +22,7 @@ data-files:
 library
   hs-source-dirs:      src
   exposed-modules:     Ntha.Core.Ast
-                     , Ntha.Core.Prologue
+                     , Ntha.Core.Prelude
                      , Ntha.Runtime.Eval
                      , Ntha.Runtime.Value
                      , Ntha.Type.Type

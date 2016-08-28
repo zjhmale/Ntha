@@ -6,7 +6,7 @@ module Ntha
     , module Ntha.Type.Refined
     , module Ntha.Runtime.Eval
     , module Ntha.Type.Infer
-    , module Ntha.Core.Prologue
+    , module Ntha.Core.Prelude
     , module Ntha.Parser.Parser
     ) where
 
@@ -17,5 +17,5 @@ import Ntha.Type.TypeScope
 import Ntha.Type.Refined
 import Ntha.Runtime.Eval
 import Ntha.Type.Infer
-import Ntha.Core.Prologue
+import Ntha.Core.Prelude
 import Ntha.Parser.Parser

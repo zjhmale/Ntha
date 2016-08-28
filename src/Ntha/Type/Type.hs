@@ -1,18 +1,19 @@
 module Ntha.Type.Type where
 
-import Ntha.State
-import Ntha.Z3.Class
-import Ntha.Z3.Logic
-import Ntha.Z3.Assertion
-import Z3.Monad
-import Data.IORef
-import Data.List (intercalate)
-import Data.Maybe (fromMaybe)
-import Control.Monad (foldM, liftM)
-import qualified Data.Map as M
-import qualified Data.Set as S
-import qualified Text.PrettyPrint as PP
-import System.IO.Unsafe (unsafePerformIO)
+import           Ntha.State
+import           Ntha.Z3.Assertion
+import           Ntha.Z3.Class
+import           Ntha.Z3.Logic
+
+import           Z3.Monad
+import           Control.Monad     (foldM, liftM)
+import           System.IO.Unsafe  (unsafePerformIO)
+import           Data.IORef
+import           Data.List         (intercalate)
+import           Data.Maybe        (fromMaybe)
+import qualified Data.Map          as M
+import qualified Data.Set          as S
+import qualified Text.PrettyPrint  as PP
 
 type Id = Int
 type TName = String
@@ -31,22 +32,22 @@ data Type = TVar Id (IORef TInstance) TName -- type variable
 -- extract normal type from refined type for type inference
 extractType :: Type -> Type
 extractType t = case t of
-                  -- just support arrow type for now
-                  TOper "→" args -> TOper "→" (map extractType args)
-                  TRefined _ t' _ -> t'
-                  _ -> t
+  -- just support arrow type for now
+  TOper "→" args -> TOper "→" (map extractType args)
+  TRefined _ t' _ -> t'
+  _ -> t
 
 extractTerm :: Type -> [Term]
 extractTerm t = case t of
-                  TOper "→" args -> args >>= extractTerm
-                  TRefined _ _ tm -> [tm]
-                  _ -> []
+  TOper "→" args -> args >>= extractTerm
+  TRefined _ _ tm -> [tm]
+  _ -> []
 
 getPredNames :: Type -> [String]
 getPredNames t = case t of
-                   TOper "→" args -> args >>= getPredNames
-                   TRefined n _ _ -> [n]
-                   _ -> []
+  TOper "→" args -> args >>= getPredNames
+  TRefined n _ _ -> [n]
+  _ -> []
 
 intT :: Type
 intT = TOper "Number" []
@@ -77,15 +78,15 @@ unitT = TOper "()" []
 
 prune :: Type -> Infer Type
 prune t = case t of
-            TVar _ inst _ -> do
-              instV <- readIORef inst
-              case instV of
-                Just inst' -> do
-                  newInstance <- prune inst'
-                  writeIORef inst $ Just newInstance
-                  return newInstance
-                Nothing -> return t
-            _ -> return t
+  TVar _ inst _ -> do
+    instV <- readIORef inst
+    case instV of
+      Just inst' -> do
+        newInstance <- prune inst'
+        writeIORef inst $ Just newInstance
+        return newInstance
+      Nothing -> return t
+  _ -> return t
 
 stringOfType :: M.Map TName TName -> Type -> Infer String
 stringOfType subrule (TVar _ inst name) = do
@@ -94,28 +95,28 @@ stringOfType subrule (TVar _ inst name) = do
     Just inst' -> stringOfType subrule inst'
     Nothing -> return $ fromMaybe "α" $ M.lookup name subrule
 stringOfType subrule (TOper name args) = case name of
-                                           "*" -> do
-                                             argsStr <- (intercalate " * ") <$> mapM (stringOfType subrule) args
-                                             return $ "(" ++ argsStr ++ ")"
-                                           "List" -> do
-                                             argStr <- stringOfType subrule $ args!!0
-                                             return $ "[" ++ argStr ++ "]"
-                                           "→" -> do
-                                             argT <- prune $ args!!0
-                                             rtnT <- prune $ args!!1
-                                             argStr <- stringOfType subrule argT
-                                             rtnStr <- stringOfType subrule rtnT
-                                             let adjust t s = case t of
-                                                               TOper "→" _ -> "(" ++ s ++ ")"
-                                                               _ -> s
-                                             let argStr' = adjust argT argStr
-                                             let rtnStr' = adjust rtnT rtnStr
-                                             return $ argStr' ++ " → " ++ rtnStr'
-                                           _ -> if (length args) == 0
-                                               then return name
-                                               else do
-                                                 argsStr <- unwords <$> mapM (stringOfType subrule) args
-                                                 return $ "(" ++ name ++ " " ++ argsStr ++ ")"
+  "*" -> do
+    argsStr <- (intercalate " * ") <$> mapM (stringOfType subrule) args
+    return $ "(" ++ argsStr ++ ")"
+  "List" -> do
+    argStr <- stringOfType subrule $ args!!0
+    return $ "[" ++ argStr ++ "]"
+  "→" -> do
+    argT <- prune $ args!!0
+    rtnT <- prune $ args!!1
+    argStr <- stringOfType subrule argT
+    rtnStr <- stringOfType subrule rtnT
+    let adjust t s = case t of
+                      TOper "→" _ -> "(" ++ s ++ ")"
+                      _ -> s
+    let argStr' = adjust argT argStr
+    let rtnStr' = adjust rtnT rtnStr
+    return $ argStr' ++ " → " ++ rtnStr'
+  _ -> if (length args) == 0
+      then return name
+      else do
+        argsStr <- unwords <$> mapM (stringOfType subrule) args
+        return $ "(" ++ name ++ " " ++ argsStr ++ ")"
 stringOfType subrule (TRecord pairs) = do
   pairsStr <- (intercalate ", ") <$> (mapM (\(k, v) -> ((k ++ ": ") ++) <$> stringOfType subrule v) $ M.toList pairs)
   return $ "{" ++ pairsStr ++ "}"
@@ -135,18 +136,21 @@ getFreeVars (TVar _ inst name) = do
   case instV of
     Just inst' -> getFreeVars inst'
     Nothing -> return $ S.singleton name
-getFreeVars (TOper _ args) = foldM (\acc arg -> do
-                                     freeVars <- getFreeVars arg
-                                     return $ S.union freeVars acc)
-                                   S.empty args
-getFreeVars (TRecord pairs) = foldM (\acc (_, v) -> do
-                                      freeVars <- getFreeVars v
-                                      return $ S.union freeVars acc)
-                                    S.empty $ M.toList pairs
-getFreeVars (TCon _ types dataType) = foldM (\acc t -> do
-                                              freeVars <- getFreeVars t
-                                              return $ S.union freeVars acc)
-                                            S.empty $ types ++ [dataType]
+getFreeVars (TOper _ args) =
+  foldM (\acc arg -> do
+    freeVars <- getFreeVars arg
+    return $ S.union freeVars acc)
+  S.empty args
+getFreeVars (TRecord pairs) =
+  foldM (\acc (_, v) -> do
+    freeVars <- getFreeVars v
+    return $ S.union freeVars acc)
+  S.empty $ M.toList pairs
+getFreeVars (TCon _ types dataType) =
+  foldM (\acc t -> do
+    freeVars <- getFreeVars t
+    return $ S.union freeVars acc)
+  S.empty $ types ++ [dataType]
 getFreeVars (TSig t) = getFreeVars t
 getFreeVars (TRefined _ t _) = getFreeVars t
 
@@ -157,7 +161,7 @@ normalize t = do
   stringOfType subrule t
 
 instance Show Type where
-    showsPrec _ x = shows $ PP.text $ unsafePerformIO $ normalize x
+  showsPrec _ x = shows $ PP.text $ unsafePerformIO $ normalize x
 
 instance Eq Type where
   TVar id1 inst1 vname1 == TVar id2 inst2 vname2 = id1 == id2 && instV1 == instV2 && vname1 == vname2 where

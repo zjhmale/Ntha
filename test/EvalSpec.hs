@@ -4,7 +4,7 @@ import Ntha.Core.Ast
 import Ntha.Runtime.Value
 import Ntha.Type.Type
 import Ntha.Runtime.Eval
-import Ntha.Core.Prologue
+import Ntha.Core.Prelude
 import qualified Data.Map as M
 import qualified Text.PrettyPrint as PP
 import Test.Hspec

@@ -1,29 +1,29 @@
 module Main where
 
-import Paths_ntha
-import Ntha(
-  Expr(..),
-  Type(..),
-  ValueScope(..),
-  Value(..),
-  TypeScope(..),
-  EPath,
-  isImport,
-  eval,
-  analyze,
-  checker,
-  parseExpr,
-  assumptions,
-  builtins)
-import Control.Lens
-import Control.Monad (foldM)
-import Control.Monad.Trans
-import System.Environment
-import System.Console.Haskeline
-import Data.List (intercalate)
-import qualified Data.Map as M
-import qualified Data.Set as S
-import qualified Control.Exception as E
+import           Ntha                     (Expr (..),
+                                           Type (..),
+                                           Value (..),
+                                           TypeScope (..),
+                                           ValueScope (..),
+                                           EPath,
+                                           analyze,
+                                           assumptions,
+                                           builtins,
+                                           checker,
+                                           eval,
+                                           isImport,
+                                           parseExpr)
+import           Paths_ntha
+
+import           System.Console.Haskeline
+import           System.Environment
+import           Control.Lens
+import           Control.Monad            (foldM)
+import           Control.Monad.Trans
+import           Data.List                (intercalate)
+import qualified Control.Exception        as E
+import qualified Data.Map                 as M
+import qualified Data.Set                 as S
 
 type Env = (TypeScope, ValueScope)
 
