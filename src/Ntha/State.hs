@@ -3,9 +3,11 @@ module Ntha.State where
 import           Data.IORef
 import           System.IO.Unsafe (unsafePerformIO)
 
+{-# NOINLINE createState #-}
 createState :: a -> IORef a
 createState = unsafePerformIO . newIORef
 
+{-# NOINLINE readState #-}
 readState :: IORef a -> a
 readState = unsafePerformIO . readIORef
 

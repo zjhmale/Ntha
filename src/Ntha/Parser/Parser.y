@@ -318,6 +318,7 @@ aliasArgName expr@(ELambda nameds t exprs) = substName subrule expr
   where
   subrule = M.fromList $ foldl (\rule (Named name _) -> rule ++ [(name, name ++ "__monadarg__")]) [] nameds
 
+{-# NOINLINE tvarMap #-}
 tvarMap :: M.Map Char Type
 tvarMap = unsafePerformIO $ do
   foldM (\m greek -> do

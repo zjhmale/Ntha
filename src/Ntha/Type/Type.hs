@@ -154,14 +154,15 @@ getFreeVars (TCon _ types dataType) =
 getFreeVars (TSig t) = getFreeVars t
 getFreeVars (TRefined _ t _) = getFreeVars t
 
-normalize :: Type -> Infer String
-normalize t = do
+{-# NOINLINE normalize #-}
+normalize :: Type -> String
+normalize t = unsafePerformIO $ do
   freeVars <- getFreeVars t
   let subrule = M.map (\c -> [c]) $ M.fromList $ zip (S.toList freeVars) ['α'..'ω']
   stringOfType subrule t
 
 instance Show Type where
-  showsPrec _ x = shows $ PP.text $ unsafePerformIO $ normalize x
+  showsPrec _ x = shows $ PP.text $ normalize x
 
 instance Eq Type where
   TVar id1 inst1 vname1 == TVar id2 inst2 vname2 = id1 == id2 && instV1 == instV2 && vname1 == vname2 where
