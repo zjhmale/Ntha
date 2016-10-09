@@ -266,9 +266,11 @@ analyze expr scope nonGeneric = case expr of
     resT' <- foldM (\rt (Case pat outcomes) -> do
                      let newScope = child scope
                      (newScope', newNonGeneric, patT) <- visitPattern pat newScope nonGeneric
+                     -- make sure pattern type of each case is the same with input type
                      unify patT inputT
                      (_, caseT) <- foldM (\(env, _) outcome -> analyze outcome env newNonGeneric)
                                          (newScope', unitT) outcomes
+                     -- make sure return type of each case are the same
                      unify caseT rt
                      return rt)
                   resT cases
