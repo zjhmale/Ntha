@@ -38,6 +38,10 @@ library
                      , Ntha.Z3.Encoding
                      , Ntha.Z3.Logic
                      , Ntha
+                     , Untyped.Syntax
+                     , Untyped.Eval
+                     , Untyped.Builtins
+                     , Untyped.Main
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , pretty
@@ -45,6 +49,7 @@ library
                      , array
                      , z3 >= 4.1.0
                      , mtl >= 2.2 && < 2.3
+                     , parsec
                    --, z3-encoding
   build-tools:         happy
                      , alex
