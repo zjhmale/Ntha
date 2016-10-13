@@ -1,12 +1,12 @@
 module Untyped.Main where
 
-import Untyped.Eval
-import Untyped.Syntax
-import Untyped.Builtins
-import System.IO
-import Control.Monad
-import Control.Monad.State
-import Control.Monad.Except
+import           Control.Monad
+import           Control.Monad.Except
+import           Control.Monad.State
+import           System.IO
+import           Untyped.Builtins
+import           Untyped.Eval
+import           Untyped.Syntax
 
 main :: IO ()
 main = do _ <- runExceptT $ evalStateT repl initialCtx

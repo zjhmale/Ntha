@@ -1,13 +1,19 @@
+-- just add this extentions to make stylish-haskell happy.
+{-# LANGUAGE ExplicitForAll        #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Untyped.Syntax where
 
-import Text.ParserCombinators.Parsec
-import qualified Text.Parsec.Prim as P
-import qualified Data.Map as M
-import Data.Functor.Identity
-import Control.Monad.State
-import Control.Monad.Except
+import           Control.Monad.Except
+import           Control.Monad.State
+import           Data.Functor.Identity
+import qualified Data.Map                      as M
+import qualified Text.Parsec.Prim              as P
+import           Text.ParserCombinators.Parsec
 
 data Expr = Int Integer
+          | Bool Bool
           | Symbol String
           | Fn Function FunctionSignature
           | Special Function FunctionSignature
@@ -35,18 +41,19 @@ pushContext :: Context -> Context
 pushContext ctx = Ctx M.empty (Just ctx)
 
 popContext :: Context -> Context
-popContext ctx@(Ctx _ Nothing) = ctx
+popContext ctx@(Ctx _ Nothing)      = ctx
 popContext (Ctx _ (Just parentCtx)) = parentCtx
 
 type Error = ExceptT String IO
 type Result = StateT Context Error Expr
 
 instance Show Expr where
-  show (Int x) = show x
-  show (Symbol x) = x
-  show (Fn _ _) = "<function>"
+  show (Int x)       = show x
+  show (Bool x)      = show x
+  show (Symbol x)    = x
+  show (Fn _ _)      = "<function>"
   show (Special _ _) = "<special-form>"
-  show (List x) = "(" ++ unwords (map show x) ++ ")"
+  show (List x)      = "(" ++ unwords (map show x) ++ ")"
 
 parseInteger :: forall u. P.ParsecT String u Data.Functor.Identity.Identity Expr
 parseInteger = do sign <- option "" (string "-")
@@ -79,4 +86,4 @@ parseExpr' = do skipMany space
 parseExpr :: String -> Result
 parseExpr source = case Text.ParserCombinators.Parsec.parse parseExpr' "" source of
                  Right x -> return x
-                 Left e -> throwError $ show e
+                 Left e  -> throwError $ show e
