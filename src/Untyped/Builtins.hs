@@ -44,12 +44,12 @@ ifForm = do [condExpr, expr1, expr2] <- getSymbols ifFormArgs
 fnArgs :: [String]
 fnArgs = ["args", "..."]
 
+-- | this get newFn part is use the power of lazyness
+-- so we can eval the function body until we really need it
+-- and at the same time all the arguments are all in the context
+-- including the function itself, so recursion is made trivial here.
 fn :: StateT Context Error Expr
 fn = do [List args, List body] <- getSymbols fnArgs
-        -- | this get newFn part is use the power of lazyness
-        -- so we can eval the function body until we really need it
-        -- and at the same time all the arguments are all in the context
-        -- including the function itself, so recursion is made trivial here.
         let newFn = do evalBody <- mapM eval body
                        case evalBody of
                          [b] -> return b

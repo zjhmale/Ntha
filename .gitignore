@@ -16,3 +16,5 @@ cabal.sandbox.config
 *.hp
 *.eventlog
 .stack-work/
+src/highlight.js
+src/style.css
